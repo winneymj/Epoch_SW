@@ -2,6 +2,7 @@
 #ifndef _ICONS_H
 #define _ICONS_H
 
+#include <stdint.h>
 #if ARDUINO >= 100
  #include "Arduino.h"
  #define WIRE_WRITE Wire.write
@@ -20,7 +21,7 @@
 extern const uint8_t menu_stationBitmaps[];
 //extern const uint8_t menu_alarmBitmaps[];
 ////extern const uint8_t menu_gamesBitmaps[];
-//extern const uint8_t menu_wirelessBitmaps[];
+extern const uint8_t menu_wirelessBitmaps[];
 //extern const uint8_t menu_exitBitmaps[];
 //extern const uint8_t menu_speedBitmaps[];
 //
