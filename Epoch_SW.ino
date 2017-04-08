@@ -3,6 +3,7 @@
 #include <Watch_Menu.h>
 #include <Wire.h>
 #include <RTCx.h>
+#include <Button.h> // https://github.com/JChristensen/Button
 
 #include "icons.h"
 #include "resources.h"
@@ -12,6 +13,13 @@
 #define SS 23
 #define EXTMODE 11
 
+#define MBUT 3
+#define UBUT 4
+#define DBUT 5
+Button buttonMid(MBUT, true, true, 20);
+Button buttonUp(UBUT, true, true, 20);
+Button buttonDown(DBUT, true, true, 20);
+
 #define BLACK 0
 #define WHITE 1
 #define INVERSE 2
@@ -19,6 +27,11 @@
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
+
+byte activeTime = 15; //how many sec until entering standby
+unsigned long standbyTimer;
+boolean active = false;
+
 
 void mainFunc()
 {
@@ -65,6 +78,14 @@ void initializeMenu()
 //  setupButtons();
 }
 
+//Wake from Middle Button
+void wake()
+{
+  noInterrupts();  // Disable interrupts
+  standbyTimer = millis()+activeTime*1000; // reset Standby Timer
+  digitalWrite(EXTMODE, LOW); // switch VCOM to software
+  interrupts();  //Enable interrupts
+}
 
 void setup()
 {
@@ -120,6 +141,19 @@ void setup()
 
   // Initialise the display
   initializeMenu();
+
+  // Button setups
+  pinMode(MBUT, INPUT_PULLUP); // Middle Button Pullup
+  pinMode(UBUT, INPUT_PULLUP); // Up Button Pullup
+  pinMode(DBUT, INPUT_PULLUP); // Down Button Pullup
+
+  attachInterrupt(1, wake, FALLING); // Middle Button Interrupt
+
+  //standbyTimer = millis()+activeTime*1000;
+
+  buttonMid.read();
+  buttonUp.read();
+  buttonDown.read();
 }
 
 // Font data for Arial 48pt
@@ -148,6 +182,14 @@ int displayColon(uint8_t x, uint8_t y)
 
 void loop(void) 
 {
+  active = (millis()<=standbyTimer); //check if active
+  buttonMid.read(); //read Button
+
+  if(buttonMid.wasPressed())
+  { //read Buttons
+    buttonMid.read(); //make sure wasPressed is not activated again
+    Serial.println('Mid button pressed');
+  }
 //  bool animating = menu.updateMenu();
 //  // Screen must be refreshed at least once per second
 //  display.refresh();
