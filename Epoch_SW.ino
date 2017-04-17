@@ -12,10 +12,11 @@
 #define MOSI 18
 #define SS 23
 #define EXTMODE 11
+#define LED 28
 
-#define MBUT 3
-#define UBUT 4
-#define DBUT 5
+#define MBUT 22
+#define UBUT 14
+#define DBUT 15
 Button buttonMid(MBUT, true, true, 20);
 Button buttonUp(UBUT, true, true, 20);
 Button buttonDown(DBUT, true, true, 20);
@@ -32,6 +33,8 @@ byte activeTime = 15; //how many sec until entering standby
 unsigned long standbyTimer;
 boolean active = false;
 
+static bool toggle = false;
+  
 
 void mainFunc()
 {
@@ -46,43 +49,44 @@ void mainFunc()
   display.refresh();
 }
 
-void initializeMenu()
-{
-#define NUM_MENUS           3
-#define MENU_MAIN_INDEX     0
-
-  menu.setTextSize(0);
-  
-  menu.initMenu(1);  // Create a menu system with ? menu rows
-  
-  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >")); // 3 options
-//  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
-//  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
-
-  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Channels"), menu_stationBitmaps, mainFunc);
-  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Wireless"), menu_wirelessBitmaps, mainFunc);
-//  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
-//  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
-
-//  menu.createOption(MENU_SUB_INDEX, 0, PSTR("2.1st Option"), menu_alarmBitmaps, alarmFunc);
-//  menu.createOption(MENU_SUB_INDEX, 1, PSTR("2.2nd Option"), menu_alarmBitmaps, MENU_SUB_SUB_INDEX);
-//  menu.createOption(MENU_SUB_INDEX, 2, PSTR("2.Exit Option"), menu_exitBitmaps, MENU_EXIT);
+//void initializeMenu()
+//{
+//#define NUM_MENUS           3
+//#define MENU_MAIN_INDEX     0
 //
-//  menu.createOption(MENU_SUB_SUB_INDEX, 0, PSTR("3.1st Option"), menu_wirelessBitmaps, alarmFunc);
-//  menu.createOption(MENU_SUB_SUB_INDEX, 1, PSTR("3.Exit Option"), menu_exitBitmaps, MENU_EXIT);
-
-  //!!!! Remove this later after buttons implemented  !!!!!!!
-//  handleDefaultSelectOption();
-  
-  // Setup the pins for the buttons
-//  setupButtons();
-}
+//  menu.setTextSize(0);
+//  
+//  menu.initMenu(1);  // Create a menu system with ? menu rows
+//  
+//  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >")); // 3 options
+////  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
+////  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
+//
+//  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Channels"), menu_stationBitmaps, mainFunc);
+//  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Wireless"), menu_wirelessBitmaps, mainFunc);
+////  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
+////  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
+//
+////  menu.createOption(MENU_SUB_INDEX, 0, PSTR("2.1st Option"), menu_alarmBitmaps, alarmFunc);
+////  menu.createOption(MENU_SUB_INDEX, 1, PSTR("2.2nd Option"), menu_alarmBitmaps, MENU_SUB_SUB_INDEX);
+////  menu.createOption(MENU_SUB_INDEX, 2, PSTR("2.Exit Option"), menu_exitBitmaps, MENU_EXIT);
+////
+////  menu.createOption(MENU_SUB_SUB_INDEX, 0, PSTR("3.1st Option"), menu_wirelessBitmaps, alarmFunc);
+////  menu.createOption(MENU_SUB_SUB_INDEX, 1, PSTR("3.Exit Option"), menu_exitBitmaps, MENU_EXIT);
+//
+//  //!!!! Remove this later after buttons implemented  !!!!!!!
+////  handleDefaultSelectOption();
+//  
+//  // Setup the pins for the buttons
+////  setupButtons();
+//}
 
 //Wake from Middle Button
 void wake()
 {
   noInterrupts();  // Disable interrupts
   standbyTimer = millis()+activeTime*1000; // reset Standby Timer
+  toggle = !toggle;
   digitalWrite(EXTMODE, LOW); // switch VCOM to software
   interrupts();  //Enable interrupts
 }
@@ -140,14 +144,17 @@ void setup()
   display.clearDisplay();
 
   // Initialise the display
-  initializeMenu();
+//  initializeMenu();
 
   // Button setups
   pinMode(MBUT, INPUT_PULLUP); // Middle Button Pullup
   pinMode(UBUT, INPUT_PULLUP); // Up Button Pullup
   pinMode(DBUT, INPUT_PULLUP); // Down Button Pullup
 
-  attachInterrupt(1, wake, FALLING); // Middle Button Interrupt
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, LOW); // switch VCOM to software
+
+  attachInterrupt(MBUT, wake, FALLING); // Middle Button Interrupt
 
   //standbyTimer = millis()+activeTime*1000;
 
@@ -182,14 +189,18 @@ int displayColon(uint8_t x, uint8_t y)
 
 void loop(void) 
 {
-  active = (millis()<=standbyTimer); //check if active
-  buttonMid.read(); //read Button
-
-  if(buttonMid.wasPressed())
-  { //read Buttons
-    buttonMid.read(); //make sure wasPressed is not activated again
-    Serial.println('Mid button pressed');
-  }
+//  active = (millis()<=standbyTimer); //check if active
+//  buttonMid.read(); //read Button
+//  Serial.print("active=");
+//  Serial.println(active);
+//
+//  if(buttonMid.wasPressed())
+//  { //read Buttons
+//    buttonMid.read(); //make sure wasPressed is not activated again
+//    Serial.println("Mid button pressed");
+//    Serial.print("standbyTimer=");
+//    Serial.println(standbyTimer);
+//  }
 //  bool animating = menu.updateMenu();
 //  // Screen must be refreshed at least once per second
 //  display.refresh();
@@ -200,17 +211,36 @@ void loop(void)
 //  }
 //  else
 //  {
-     delay(1000);
+     delay(500);
 //  }
+  
+  buttonMid.read();
+  if (buttonMid.wasPressed())
+  {
+    Serial.println("Mid wasPressed");
+  }
 
+  buttonUp.read();
+  if (buttonUp.wasPressed())
+  {
+    Serial.println("Up wasPressed");
+  }
 
+  buttonDown.read();
+  if (buttonDown.wasPressed())
+  {
+    Serial.println("Down wasPressed");
+  }
+  
   int xpos = 5;
   xpos += displayChar(xpos, 10, 0);
   xpos += displayChar(xpos, 10, 4);
   xpos += displayColon(xpos, 15);
   xpos += displayChar(xpos, 10, 4);
   xpos += displayChar(xpos, 10, 4);
-  
+
+  digitalWrite(LED, (toggle == true) ? HIGH : LOW);
+
   display.refresh();
 }
 
