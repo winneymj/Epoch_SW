@@ -11,12 +11,12 @@
 #define SCK 19
 #define MOSI 18
 #define SS 23
-#define EXTMODE 11
-#define LED 28
+#define EXTMODE 28
+#define LED 6
 
-#define MBUT 22
+#define MBUT 4
 #define UBUT 14
-#define DBUT 15
+#define DBUT 22
 Button buttonMid(MBUT, true, true, 20);
 Button buttonUp(UBUT, true, true, 20);
 Button buttonDown(DBUT, true, true, 20);
@@ -28,6 +28,9 @@ Button buttonDown(DBUT, true, true, 20);
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
+
+RTCx DS3231M(RTCx::DS1307Address);
+RTCx MCP7941(RTCx::MCP7941xAddress);
 
 byte activeTime = 15; //how many sec until entering standby
 unsigned long standbyTimer;
@@ -87,54 +90,45 @@ void wake()
   noInterrupts();  // Disable interrupts
   standbyTimer = millis()+activeTime*1000; // reset Standby Timer
   toggle = !toggle;
-  digitalWrite(EXTMODE, LOW); // switch VCOM to software
+//  digitalWrite(EXTMODE, LOW); // switch VCOM to software
   interrupts();  //Enable interrupts
 }
 
 void setup()
 {
   Serial.begin(9600);
+  while (!Serial); 
+
+  Serial.println("before Wire.begin()");
   Wire.begin();
-
-//  while (!Serial); 
-
-  // Test for a MCP7941x device first.
-  uint8_t addressList[] = {RTCx::MCP7941xAddress};
-
+  Serial.println("after Wire.begin()");
   
-  // Autoprobe to find a real-time clock.
-  if (rtc.autoprobe(addressList, sizeof(addressList)))
-  {
-    // Found something, hopefully a clock.
-    Serial.println("Autoprobe found ");
-  }
-  else
-  {
-    Serial.println("Autoprobe !found ");
-  }
-
-    switch (rtc.getDevice())
-  {
-    case RTCx::DS1307:
-      Serial.print("DS1307");
-      break;
-    case RTCx::MCP7941x:
-      Serial.print("MCP7941x");
-      break;
-    default:
-      // Ooops. Must update this example!
-      Serial.print("unknown device");
-      break;
-  }
-  Serial.print(" at 0x");
-  Serial.println(rtc.getAddress(), HEX);
+  Serial.print("MCP7941 Address=");
+  Serial.println(MCP7941.getAddress(), HEX);
 
   // Ensure the oscillator is running.
-  rtc.startClock();
-  Serial.println("startClock()");
+  MCP7941.startClock();
+  Serial.println("MCP7941.startClock()");
 
-  rtc.setSQW(RTCx::freq1Hz);
-  Serial.println("setSQW()");
+  MCP7941.setSQW(RTCx::freq1Hz);
+  Serial.println("MCP7941.setSQW()");
+
+  // Ensure the oscillator is running.
+  DS3231M.startClock();
+  Serial.println("DS3231M.startClock()");
+
+//  DS3231M.setSQW(RTCx::freq1Hz);
+//  Serial.println("DS3231M.setSQW()");
+
+  // Clear any existing alarms
+  DS3231M.clearAlarm(RTCx::ALARM1);
+  DS3231M.clearAlarm(RTCx::ALARM2);
+
+  // Enable alarm 2 
+  DS3231M.enableAlarm(RTCx::ALARM2, true);
+  Serial.println("DS3231M.enableAlarm()");
+
+  DS3231M.setAlarm(RTCx::once_per_min);
 
   pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
   digitalWrite(EXTMODE, HIGH); // switch VCOM to external
@@ -151,10 +145,15 @@ void setup()
   pinMode(UBUT, INPUT_PULLUP); // Up Button Pullup
   pinMode(DBUT, INPUT_PULLUP); // Down Button Pullup
 
+  pinMode(EXTMODE, OUTPUT);
+  digitalWrite(EXTMODE, LOW); // switch VCOM to software
+
+    // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED, OUTPUT);
-  digitalWrite(LED, LOW); // switch VCOM to software
 
   attachInterrupt(MBUT, wake, FALLING); // Middle Button Interrupt
+  attachInterrupt(UBUT, wake, FALLING); // Middle Button Interrupt
+  attachInterrupt(DBUT, wake, FALLING); // Middle Button Interrupt
 
   //standbyTimer = millis()+activeTime*1000;
 
@@ -231,7 +230,11 @@ void loop(void)
   {
     Serial.println("Down wasPressed");
   }
+
+  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
+  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
   
+//  Serial.println("Looping");
   int xpos = 5;
   xpos += displayChar(xpos, 10, 0);
   xpos += displayChar(xpos, 10, 4);
@@ -242,5 +245,16 @@ void loop(void)
   digitalWrite(LED, (toggle == true) ? HIGH : LOW);
 
   display.refresh();
+
+  uint8_t stat = DS3231M.getStatus();
+  Serial.print("DS3231M.getStatus():");
+  Serial.println(stat, HEX);
+
+  if (stat & A2F) // See if alarm2 is triggered
+  {
+    Serial.print("Alarm2 triggered at now:");
+    Serial.println(millis());
+    DS3231M.clearStatusBit(A2F);
+  }
 }
 
