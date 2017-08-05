@@ -13,6 +13,7 @@
 #define SS 23
 #define EXTMODE 28
 #define LED 6
+#define RTC_INT 9
 
 #define MBUT 4
 #define UBUT 14
@@ -29,8 +30,8 @@ Button buttonDown(DBUT, true, true, 20);
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
 
-RTCx DS3231M(RTCx::DS1307Address);
-RTCx MCP7941(RTCx::MCP7941xAddress);
+RTCx DS3231M(RTCx::DS3231MAddress, RTCx::DS3231M);
+RTCx MCP7941(RTCx::MCP7941xAddress, RTCx::MCP7941x);
 
 byte activeTime = 15; //how many sec until entering standby
 unsigned long standbyTimer;
@@ -113,6 +114,9 @@ void setup()
   MCP7941.setSQW(RTCx::freq1Hz);
   Serial.println("MCP7941.setSQW()");
 
+  // Clear out RTC status bits
+  DS3231M.clearStatusBit(A2F | EN32KHZ | BSY | A2F | A1F);
+
   // Ensure the oscillator is running.
   DS3231M.startClock();
   Serial.println("DS3231M.startClock()");
@@ -144,6 +148,7 @@ void setup()
   pinMode(MBUT, INPUT_PULLUP); // Middle Button Pullup
   pinMode(UBUT, INPUT_PULLUP); // Up Button Pullup
   pinMode(DBUT, INPUT_PULLUP); // Down Button Pullup
+  pinMode(RTC_INT, INPUT_PULLUP); // RTC Interrupt
 
   pinMode(EXTMODE, OUTPUT);
   digitalWrite(EXTMODE, LOW); // switch VCOM to software
@@ -154,6 +159,7 @@ void setup()
   attachInterrupt(MBUT, wake, FALLING); // Middle Button Interrupt
   attachInterrupt(UBUT, wake, FALLING); // Middle Button Interrupt
   attachInterrupt(DBUT, wake, FALLING); // Middle Button Interrupt
+  attachInterrupt(RTC_INT, wake, FALLING); // RTC Interrupt
 
   //standbyTimer = millis()+activeTime*1000;
 
