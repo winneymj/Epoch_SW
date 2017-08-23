@@ -1,8 +1,8 @@
 #include <Time.h>         //http://www.arduino.cc/playground/Code/Time  
 #include <TimeLib.h>         //http://www.arduino.cc/playground/Code/Time  
 #include <Wire.h>
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_SharpMem.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SharpMem.h>
 //#include <Watch_Menu.h>
 #include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
@@ -29,7 +29,7 @@
 #define INVERSE 2
 
 
-//Adafruit_SharpMem display(SCK, MOSI, SS);
+Adafruit_SharpMem display(SCK, MOSI, SS);
 //WatchMenu menu(display);
 volatile boolean buttonRead = false; //variables in ISR need to be volatile
 volatile boolean buttonFired = false; //variables in ISR need to be volatile
@@ -134,11 +134,10 @@ void initializePins()
 
   // Set LED pin to output.
   pinMode(LED, OUTPUT);
-//
-//  // RTC square wave VCOM at 1Hz  
-//  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
-////  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
-//
+
+  // RTC square wave VCOM at 1Hz  
+  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
+  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
 }
 
 void initializeRTC()
@@ -209,7 +208,13 @@ void setup()
   Serial.begin(9600);
   while (!Serial); 
 
+  Serial.println("setup: enter");
+
+  // Set up communications
   Wire.begin();
+
+  // Set up display
+  display.begin();
 
   // Setup the pins for buttons etc.
   initializePins();
@@ -217,10 +222,13 @@ void setup()
   // Initialize the RTC (DS3232 and MCP7941)
   initializeRTC();
   
+  display.clearDisplay();
+  Serial.println("setup: clearDisplay");
+  display.refresh();
+  Serial.println("setup: refresh");
 
-  // start & clear the display
-//  display.begin();
-//  display.clearDisplay();
+  display.setTextColor(BLACK);
+  display.setTextSize(1);
 
   // Initialise the display
 //  initializeMenu();
@@ -234,59 +242,75 @@ void setup()
 //  buttonUp.read();
 //  buttonDown.read();
 
-//  Serial.println("setup: exit");
+  Serial.println("setup: exit");
 }
 
 // Font data for Arial 48pt
 
-//extern const uint8_t arialNarrow_48ptBitmaps[];
-//extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[];
-//extern const uint8_t calibri_48ptBitmaps_colon[];
-//extern const FONT_CHAR_INFO calibri_48ptDescriptors_colon[];
-//
-//int displayChar(uint8_t x, uint8_t y, uint8_t c)
-//{
-//  FONT_CHAR_INFO fDetails = arialNarrow_48ptDescriptors[c];
-//
-//  const byte* bitmap = &arialNarrow_48ptBitmaps[fDetails.offset];
-//  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
-//  return fDetails.w + 2;
-//}
-//int displayColon(uint8_t x, uint8_t y)
-//{
-//  FONT_CHAR_INFO fDetails = calibri_48ptDescriptors_colon[0];
-//
-//  const byte* bitmap = &calibri_48ptBitmaps_colon[fDetails.offset];
-//  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
-//  return fDetails.w + 2;
-//}
+extern const uint8_t arialNarrow_48ptBitmaps[];
+extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[];
+extern const uint8_t calibri_48ptBitmaps_colon[];
+extern const FONT_CHAR_INFO calibri_48ptDescriptors_colon[];
 
-void printTm(Stream &str, struct RTCx::tm *tm)
+int displayChar(uint8_t x, uint8_t y, uint8_t c)
 {
-  str.print(tm->tm_year + 1900);
-  str.print('-');
-  str.print(tm->tm_mon + 1);
-  str.print('-');
-  str.print(tm->tm_mday);
-  str.print('T');
-  str.print(tm->tm_hour);
-  str.print(':');
-  str.print(tm->tm_min);
-  str.print(':');
-  str.print(tm->tm_sec);
-  str.print(" yday=");
-  str.print(tm->tm_yday);
-  str.print(" wday=");
-  str.println(tm->tm_wday);
+  FONT_CHAR_INFO fDetails = arialNarrow_48ptDescriptors[c];
+
+  const byte* bitmap = &arialNarrow_48ptBitmaps[fDetails.offset];
+  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
+  return fDetails.w + 2;
+}
+int displayColon(uint8_t x, uint8_t y)
+{
+  FONT_CHAR_INFO fDetails = calibri_48ptDescriptors_colon[0];
+
+  const byte* bitmap = &calibri_48ptBitmaps_colon[fDetails.offset];
+  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
+  return fDetails.w + 2;
+}
+
+void displayTime(tmElements_t currTime)
+{
+  // Clear the display buffer before writing to the display.
+  // Don't need to clear the display as the refresh will
+  // write it all.
+  display.clearDisplayBuffer();
+
+  int xpos = 4;
+  xpos += displayChar(xpos, 10, currTime.Hour / 10);
+  xpos += displayChar(xpos, 10, currTime.Hour % 10);
+  xpos += displayColon(xpos, 20);
+//  xpos += displayChar(xpos, 10, currTime.Minute / 10);
+//  xpos += displayChar(xpos, 10, currTime.Minute % 10);
+  xpos += displayChar(xpos, 10, currTime.Second / 10);
+  xpos += displayChar(xpos, 10, currTime.Second % 10);
+
+  // Display the time.  Writes the entire buffer to the display
+  display.refresh();
 }
 
 void loop(void) 
 {
+  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
+
   // Sleep and wait for interrupt from buttons or RTC
   sleepProcessor();
-//delay(100);
-//    Serial.println("looping");
-  
+
+  digitalWrite(EXTMODE, LOW); // switch VCOM to software.
+
+  // If this is a RTC interrupt then need to
+  // get the time and display it.
+  if (rtcFired)
+  {
+    rtcFired = false;
+    // Get the time from the RTC
+    tmElements_t currTime;
+    MyDS3232.read(currTime);
+
+    displayTime(currTime);
+  }
+
+  // See if a button fired and woke up the processor.
   if (buttonFired)
   {
     buttonFired = false;
@@ -310,18 +334,6 @@ void loop(void)
     }
   }
 
-//  active = (millis()<=standbyTimer); //check if active
-//  buttonMid.read(); //read Button
-//  Serial.print("active=");
-//  Serial.println(active);
-//
-//  if(buttonMid.wasPressed())
-//  { //read Buttons
-//    buttonMid.read(); //make sure wasPressed is not activated again
-//    Serial.println("Mid button pressed");
-//    Serial.print("standbyTimer=");
-//    Serial.println(standbyTimer);
-//  }
 //  bool animating = menu.updateMenu();
 //  // Screen must be refreshed at least once per second
 //  display.refresh();
@@ -335,70 +347,6 @@ void loop(void)
 //     delay(500);
 //  }
   
-//  buttonMid.read();
-//  if (buttonMid.wasPressed())
-//  {
-////    rtcRead = !rtcRead;
-////    Serial.println("Mid wasPressed");
-//  }
-//
-//  buttonUp.read();
-//  if (buttonUp.wasPressed())
-//  {
-////    rtcRead = !rtcRead;
-////    Serial.println("Up wasPressed");
-//  }
-//
-//  buttonDown.read();
-//  if (buttonDown.wasPressed())
-//  {
-////    rtcRead = !rtcRead;
-////    Serial.println("Down wasPressed");
-//  }
-
   digitalWrite(LED, rtcRead ? HIGH : LOW);
-
-//  struct RTCx::tm tm;
-//    MCP7941.readClock(tm);
-//    
-//    printTm(Serial, &tm);
-//    RTCx::time_t t = RTCx::mktime(&tm);
-//    printTm(Serial, &tm);
-//    Serial.print("unixtime = ");
-//    Serial.println(t);
-//    Serial.println("-----");
-
-
-//  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
-//  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
-  
-//  Serial.println("Looping");
-//  int xpos = 5;
-//  xpos += displayChar(xpos, 10, 0);
-//  xpos += displayChar(xpos, 10, 4);
-//  xpos += displayColon(xpos, 15);
-//  xpos += displayChar(xpos, 10, 4);
-//  xpos += displayChar(xpos, 10, 4);
-
-//  digitalWrite(LED, (toggle == true) ? HIGH : LOW);
-
-//  display.refresh();
-//  counter--;
-
-//  Serial.print("counter=");
-//  Serial.println(counter);
-//  if (counter == 0)
-//  {
-//    pinMode(LED, OUTPUT);
-//    digitalWrite(LED, HIGH);
-//  }
-//  else if (counter == -30)
-//  {
-//    digitalWrite(LED, LOW);
-//  }
-//  else if (counter == -60)
-//  {
-//    pinMode(LED, INPUT);
-//  }
 }
 
