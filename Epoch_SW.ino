@@ -1,11 +1,11 @@
 #include <Time.h>         //http://www.arduino.cc/playground/Code/Time  
 #include <TimeLib.h>         //http://www.arduino.cc/playground/Code/Time  
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SharpMem.h>
-#include <Watch_Menu.h>
-#include <Button.h> // https://github.com/JChristensen/Button
-#include <DS3232RTC.h>    //http://github.com/JChristensen/DS3232RTC
+//#include <Adafruit_GFX.h>
+//#include <Adafruit_SharpMem.h>
+//#include <Watch_Menu.h>
+#include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
+#include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
 #include "icons.h"
 #include "resources.h"
@@ -29,19 +29,15 @@
 #define INVERSE 2
 
 
-Button buttonMid(MBUT, true, true, 20);
-Button buttonUp(UBUT, true, true, 20);
-Button buttonDown(DBUT, true, true, 20);
-
-Adafruit_SharpMem display(SCK, MOSI, SS);
-WatchMenu menu(display);
+//Adafruit_SharpMem display(SCK, MOSI, SS);
+//WatchMenu menu(display);
 volatile boolean buttonRead = false; //variables in ISR need to be volatile
 volatile boolean buttonFired = false; //variables in ISR need to be volatile
 volatile boolean rtcRead = false; //variables in ISR need to be volatile
 volatile boolean rtcFired = false; //variables in ISR need to be volatile
 
 DS3232RTC MyDS3232;
-//RTCx MCP7941(RTCx::MCP7941xAddress, RTCx::MCP7941x);
+RTCx MCP7941;
 
 byte activeTime = 15; //how many sec until entering standby
 unsigned long standbyTimer;
@@ -58,7 +54,7 @@ void enableInterrupts()
 
 void disableInterrupts()
 {
-  // Enable EIC
+  // Disable EIC
   EIC->CTRL.bit.ENABLE = 0;
   while (EIC->STATUS.bit.SYNCBUSY == 1) { }
 }
@@ -66,14 +62,14 @@ void disableInterrupts()
 void mainFunc()
 {
   // Clear the display
-  display.clearDisplay();
-  display.refresh();
-
-  display.setTextColor(BLACK);
-  display.setTextSize(1);
-
-  display.print("Here1");
-  display.refresh();
+//  display.clearDisplay();
+//  display.refresh();
+//
+//  display.setTextColor(BLACK);
+//  display.setTextSize(1);
+//
+//  display.print("Here1");
+//  display.refresh();
 }
 
 //void initializeMenu()
@@ -138,11 +134,11 @@ void initializePins()
 
   // Set LED pin to output.
   pinMode(LED, OUTPUT);
-
-  // RTC square wave VCOM at 1Hz  
-  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
-//  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
-
+//
+//  // RTC square wave VCOM at 1Hz  
+//  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
+////  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
+//
 }
 
 void initializeRTC()
@@ -168,12 +164,19 @@ void initializeRTC()
   MyDS3232.alarmInterrupt(ALARM_2, true);
 #endif
 
-  // Ensure the oscillator is running.
-//  MCP7941.startClock();
-//  Serial.println("MCP7941.startClock()");
+  // Enable 32Khz output on pin 1
+  MyDS3232.writeRTC(RTC_STATUS, MyDS3232.readRTC(RTC_STATUS) | _BV(EN32KHZ));
 
-//  MCP7941.setSQW(RTCx::freq1Hz);
-//  Serial.println("MCP7941.setSQW()");
+  // The address used by the DS1307 is also used by other devices (eg
+  // MCP3424 ADC). Test for a MCP7941x device first.
+  uint8_t addressList[] = {RTCx::MCP7941xAddress};
+
+  // Autoprobe to find a real-time clock.
+  MCP7941.autoprobe(addressList, sizeof(addressList));
+
+  // Ensure the oscillator is running.
+  MCP7941.startClock();
+  MCP7941.setSQW(RTCx::freq1Hz);
 }
 
 void sleepProcessor()
@@ -188,6 +191,7 @@ void sleepProcessor()
 
   // Clear the alarm interrupt in the RTC, else we will never wake up from sleep.
   // Very strange happening that only exhibits self when interrupt trigger is LOW.
+  // and we want to deepsleep.
 #ifdef EVERY_SECOND
   uint8_t stat = MyDS3232.alarm(ALARM_1); 
 //  Serial.println("sleep SECOND");
@@ -197,17 +201,13 @@ void sleepProcessor()
 //  Serial.println("sleep MINUTE");
 #endif
   
-//  Serial.println("sleep");
-//  delay(500);
-//  Serial.end();
-  
   __WFI(); // Now wait for interrupt.
 }
 
 void setup()
 {
   Serial.begin(9600);
-//  while (!Serial); 
+  while (!Serial); 
 
   Wire.begin();
 
@@ -230,44 +230,85 @@ void setup()
 
   //standbyTimer = millis()+activeTime*1000;
 
-  buttonMid.read();
-  buttonUp.read();
-  buttonDown.read();
+//  buttonMid.read();
+//  buttonUp.read();
+//  buttonDown.read();
 
 //  Serial.println("setup: exit");
 }
 
 // Font data for Arial 48pt
 
-extern const uint8_t arialNarrow_48ptBitmaps[];
-extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[];
-extern const uint8_t calibri_48ptBitmaps_colon[];
-extern const FONT_CHAR_INFO calibri_48ptDescriptors_colon[];
+//extern const uint8_t arialNarrow_48ptBitmaps[];
+//extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[];
+//extern const uint8_t calibri_48ptBitmaps_colon[];
+//extern const FONT_CHAR_INFO calibri_48ptDescriptors_colon[];
+//
+//int displayChar(uint8_t x, uint8_t y, uint8_t c)
+//{
+//  FONT_CHAR_INFO fDetails = arialNarrow_48ptDescriptors[c];
+//
+//  const byte* bitmap = &arialNarrow_48ptBitmaps[fDetails.offset];
+//  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
+//  return fDetails.w + 2;
+//}
+//int displayColon(uint8_t x, uint8_t y)
+//{
+//  FONT_CHAR_INFO fDetails = calibri_48ptDescriptors_colon[0];
+//
+//  const byte* bitmap = &calibri_48ptBitmaps_colon[fDetails.offset];
+//  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
+//  return fDetails.w + 2;
+//}
 
-int displayChar(uint8_t x, uint8_t y, uint8_t c)
+void printTm(Stream &str, struct RTCx::tm *tm)
 {
-  FONT_CHAR_INFO fDetails = arialNarrow_48ptDescriptors[c];
-
-  const byte* bitmap = &arialNarrow_48ptBitmaps[fDetails.offset];
-  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
-  return fDetails.w + 2;
-}
-int displayColon(uint8_t x, uint8_t y)
-{
-  FONT_CHAR_INFO fDetails = calibri_48ptDescriptors_colon[0];
-
-  const byte* bitmap = &calibri_48ptBitmaps_colon[fDetails.offset];
-  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
-  return fDetails.w + 2;
+  str.print(tm->tm_year + 1900);
+  str.print('-');
+  str.print(tm->tm_mon + 1);
+  str.print('-');
+  str.print(tm->tm_mday);
+  str.print('T');
+  str.print(tm->tm_hour);
+  str.print(':');
+  str.print(tm->tm_min);
+  str.print(':');
+  str.print(tm->tm_sec);
+  str.print(" yday=");
+  str.print(tm->tm_yday);
+  str.print(" wday=");
+  str.println(tm->tm_wday);
 }
 
 void loop(void) 
 {
   // Sleep and wait for interrupt from buttons or RTC
   sleepProcessor();
+//delay(100);
+//    Serial.println("looping");
   
-  digitalWrite(LED, rtcRead ? HIGH : LOW);
-
+  if (buttonFired)
+  {
+    buttonFired = false;
+    
+    uint8_t pinValM = digitalRead(MBUT);
+    if (pinValM == 0)
+    {
+      rtcRead = !rtcRead;
+    }
+  
+    uint8_t pinValD = digitalRead(DBUT);
+    if (pinValD == 0)
+    {
+      rtcRead = !rtcRead;
+    }
+      
+    uint8_t pinValU = digitalRead(UBUT);
+    if (pinValU == 0)
+    {
+      rtcRead = !rtcRead;
+    }
+  }
 
 //  active = (millis()<=standbyTimer); //check if active
 //  buttonMid.read(); //read Button
@@ -294,23 +335,39 @@ void loop(void)
 //     delay(500);
 //  }
   
-  buttonMid.read();
-  if (buttonMid.wasPressed())
-  {
-//    Serial.println("Mid wasPressed");
-  }
+//  buttonMid.read();
+//  if (buttonMid.wasPressed())
+//  {
+////    rtcRead = !rtcRead;
+////    Serial.println("Mid wasPressed");
+//  }
+//
+//  buttonUp.read();
+//  if (buttonUp.wasPressed())
+//  {
+////    rtcRead = !rtcRead;
+////    Serial.println("Up wasPressed");
+//  }
+//
+//  buttonDown.read();
+//  if (buttonDown.wasPressed())
+//  {
+////    rtcRead = !rtcRead;
+////    Serial.println("Down wasPressed");
+//  }
 
-  buttonUp.read();
-  if (buttonUp.wasPressed())
-  {
-//    Serial.println("Up wasPressed");
-  }
+  digitalWrite(LED, rtcRead ? HIGH : LOW);
 
-  buttonDown.read();
-  if (buttonDown.wasPressed())
-  {
-//    Serial.println("Down wasPressed");
-  }
+//  struct RTCx::tm tm;
+//    MCP7941.readClock(tm);
+//    
+//    printTm(Serial, &tm);
+//    RTCx::time_t t = RTCx::mktime(&tm);
+//    printTm(Serial, &tm);
+//    Serial.print("unixtime = ");
+//    Serial.println(t);
+//    Serial.println("-----");
+
 
 //  pinMode(EXTMODE, OUTPUT); //VCOM Mode (h=ext l=sw)
 //  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
@@ -326,6 +383,22 @@ void loop(void)
 //  digitalWrite(LED, (toggle == true) ? HIGH : LOW);
 
 //  display.refresh();
+//  counter--;
 
+//  Serial.print("counter=");
+//  Serial.println(counter);
+//  if (counter == 0)
+//  {
+//    pinMode(LED, OUTPUT);
+//    digitalWrite(LED, HIGH);
+//  }
+//  else if (counter == -30)
+//  {
+//    digitalWrite(LED, LOW);
+//  }
+//  else if (counter == -60)
+//  {
+//    pinMode(LED, INPUT);
+//  }
 }
 
