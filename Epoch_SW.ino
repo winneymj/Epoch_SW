@@ -3,7 +3,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SharpMem.h>
-//#include <Watch_Menu.h>
+#include <Watch_Menu.h>
 #include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
@@ -30,7 +30,7 @@
 
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
-//WatchMenu menu(display);
+WatchMenu menu(display);
 volatile boolean buttonRead = false; //variables in ISR need to be volatile
 volatile boolean buttonFired = false; //variables in ISR need to be volatile
 volatile boolean rtcRead = false; //variables in ISR need to be volatile
@@ -72,37 +72,37 @@ void mainFunc()
 //  display.refresh();
 }
 
-//void initializeMenu()
-//{
-//#define NUM_MENUS           3
-//#define MENU_MAIN_INDEX     0
+void initializeMenu()
+{
+#define NUM_MENUS           3
+#define MENU_MAIN_INDEX     0
+
+  menu.setTextSize(0);
+  
+  menu.initMenu(1);  // Create a menu system with ? menu rows
+  
+  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >")); // 3 options
+//  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
+//  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
+
+  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Channels"), menu_stationBitmaps, mainFunc);
+  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Wireless"), menu_wirelessBitmaps, mainFunc);
+//  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
+//  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
+
+//  menu.createOption(MENU_SUB_INDEX, 0, PSTR("2.1st Option"), menu_alarmBitmaps, alarmFunc);
+//  menu.createOption(MENU_SUB_INDEX, 1, PSTR("2.2nd Option"), menu_alarmBitmaps, MENU_SUB_SUB_INDEX);
+//  menu.createOption(MENU_SUB_INDEX, 2, PSTR("2.Exit Option"), menu_exitBitmaps, MENU_EXIT);
 //
-//  menu.setTextSize(0);
-//  
-//  menu.initMenu(1);  // Create a menu system with ? menu rows
-//  
-//  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >")); // 3 options
-////  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
-////  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
-//
-//  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Channels"), menu_stationBitmaps, mainFunc);
-//  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Wireless"), menu_wirelessBitmaps, mainFunc);
-////  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
-////  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
-//
-////  menu.createOption(MENU_SUB_INDEX, 0, PSTR("2.1st Option"), menu_alarmBitmaps, alarmFunc);
-////  menu.createOption(MENU_SUB_INDEX, 1, PSTR("2.2nd Option"), menu_alarmBitmaps, MENU_SUB_SUB_INDEX);
-////  menu.createOption(MENU_SUB_INDEX, 2, PSTR("2.Exit Option"), menu_exitBitmaps, MENU_EXIT);
-////
-////  menu.createOption(MENU_SUB_SUB_INDEX, 0, PSTR("3.1st Option"), menu_wirelessBitmaps, alarmFunc);
-////  menu.createOption(MENU_SUB_SUB_INDEX, 1, PSTR("3.Exit Option"), menu_exitBitmaps, MENU_EXIT);
-//
-//  //!!!! Remove this later after buttons implemented  !!!!!!!
-////  handleDefaultSelectOption();
-//  
-//  // Setup the pins for the buttons
-////  setupButtons();
-//}
+//  menu.createOption(MENU_SUB_SUB_INDEX, 0, PSTR("3.1st Option"), menu_wirelessBitmaps, alarmFunc);
+//  menu.createOption(MENU_SUB_SUB_INDEX, 1, PSTR("3.Exit Option"), menu_exitBitmaps, MENU_EXIT);
+
+  //!!!! Remove this later after buttons implemented  !!!!!!!
+//  handleDefaultSelectOption();
+  
+  // Setup the pins for the buttons
+//  setupButtons();
+}
 
 void RTC_int() //ISR for RTC interrupt overy minute
 {
@@ -206,7 +206,7 @@ void sleepProcessor()
 void setup()
 {
   Serial.begin(9600);
-  while (!Serial); 
+//  while (!Serial); 
 
   Serial.println("setup: enter");
 
@@ -231,7 +231,7 @@ void setup()
   display.setTextSize(1);
 
   // Initialise the display
-//  initializeMenu();
+  initializeMenu();
 
 //  pinMode(EXTMODE, OUTPUT);
 //  digitalWrite(EXTMODE, LOW); // switch VCOM to software
@@ -293,6 +293,7 @@ void loop(void)
 {
   digitalWrite(EXTMODE, HIGH); // switch VCOM to external
 
+//  delay(1000);
   // Sleep and wait for interrupt from buttons or RTC
   sleepProcessor();
 
@@ -319,6 +320,17 @@ void loop(void)
     if (pinValM == 0)
     {
       rtcRead = !rtcRead;
+
+      bool animating = menu.updateMenu();
+      display.refresh();
+      // Screen must be refreshed at least once per second
+      while (animating)
+      {
+        display.clearDisplayBuffer();
+        animating = menu.updateMenu();
+        display.refresh();
+        delay(50);
+      }  
     }
   
     uint8_t pinValD = digitalRead(DBUT);
@@ -334,19 +346,6 @@ void loop(void)
     }
   }
 
-//  bool animating = menu.updateMenu();
-//  // Screen must be refreshed at least once per second
-//  display.refresh();
-//  if (animating)
-//  {
-//    delay(20);
-//    display.clearDisplay();
-//  }
-//  else
-//  {
-//     delay(500);
-//  }
-  
   digitalWrite(LED, rtcRead ? HIGH : LOW);
 }
 
