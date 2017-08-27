@@ -23,6 +23,7 @@
 
 #define EVERY_SECOND
 //#define EVERY_MINUTE
+//#define SLEEP_PROCESSOR
 
 #define BLACK 0
 #define WHITE 1
@@ -85,8 +86,8 @@ void initializeMenu()
 //  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
 //  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
 
-  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Channels"), menu_stationBitmaps, mainFunc);
-  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Wireless"), menu_wirelessBitmaps, mainFunc);
+  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date/Time"), menu_clockBitmaps, mainFunc);
+  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Exit"), menu_exitBitmaps, MENU_EXIT);
 //  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
 //  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
 
@@ -293,9 +294,12 @@ void loop(void)
 {
   digitalWrite(EXTMODE, HIGH); // switch VCOM to external
 
-//  delay(1000);
+#ifdef SLEEP_PROCESSOR
   // Sleep and wait for interrupt from buttons or RTC
   sleepProcessor();
+#else
+  delay(1000);
+#endif
 
   digitalWrite(EXTMODE, LOW); // switch VCOM to software.
 
@@ -314,10 +318,16 @@ void loop(void)
   // See if a button fired and woke up the processor.
   if (buttonFired)
   {
+  Serial.print("buttonFired=");
+  Serial.println(buttonFired);
     buttonFired = false;
     
     uint8_t pinValM = digitalRead(MBUT);
+  Serial.print("pinValM=");
+  Serial.println(pinValM);
+#ifdef SLEEP_PROCESSOR
     if (pinValM == 0)
+#endif
     {
       rtcRead = !rtcRead;
 
@@ -326,7 +336,8 @@ void loop(void)
       // Screen must be refreshed at least once per second
       while (animating)
       {
-        display.clearDisplayBuffer();
+//        display.clearDisplayBuffer();
+        display.fillRect(0, 64, 128, 128, WHITE);
         animating = menu.updateMenu();
         display.refresh();
         delay(50);

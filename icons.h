@@ -18,11 +18,12 @@
 #define MENU_CHANNELS_INDEX 3
 
 
-extern const uint8_t menu_stationBitmaps[];
+extern const  uint8_t menu_clockBitmaps[];
+//extern const uint8_t menu_stationBitmaps[];
 //extern const uint8_t menu_alarmBitmaps[];
 ////extern const uint8_t menu_gamesBitmaps[];
-extern const uint8_t menu_wirelessBitmaps[];
-//extern const uint8_t menu_exitBitmaps[];
+//extern const uint8_t menu_wirelessBitmaps[];
+extern const uint8_t menu_exitBitmaps[];
 //extern const uint8_t menu_speedBitmaps[];
 //
 //
