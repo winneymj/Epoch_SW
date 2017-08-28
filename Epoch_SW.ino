@@ -21,14 +21,11 @@
 #define DBUT 22
 #define RTC_INT 9
 
+#define INACTIVITY 10000
+
 #define EVERY_SECOND
 //#define EVERY_MINUTE
-//#define SLEEP_PROCESSOR
-
-#define BLACK 0
-#define WHITE 1
-#define INVERSE 2
-
+#define SLEEP_PROCESSOR
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
@@ -36,6 +33,9 @@ volatile boolean buttonRead = false; //variables in ISR need to be volatile
 volatile boolean buttonFired = false; //variables in ISR need to be volatile
 volatile boolean rtcRead = false; //variables in ISR need to be volatile
 volatile boolean rtcFired = false; //variables in ISR need to be volatile
+volatile uint8_t pinValM = false;
+volatile uint8_t pinValD = false;
+volatile uint8_t pinValU = false;
 
 DS3232RTC MyDS3232;
 RTCx MCP7941;
@@ -44,7 +44,21 @@ byte activeTime = 15; //how many sec until entering standby
 unsigned long standbyTimer;
 boolean active = false;
 
-static bool toggle = false;
+const char months[12][4] PROGMEM = {
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec"
+};
+
 
 void enableInterrupts()
 {
@@ -60,17 +74,42 @@ void disableInterrupts()
   while (EIC->STATUS.bit.SYNCBUSY == 1) { }
 }
 
-void mainFunc()
+void makeDateStr(char* buff)
 {
-  // Clear the display
-//  display.clearDisplay();
-//  display.refresh();
+  char month[4];
+  tmElements_t currTime;
+  MyDS3232.read(currTime);
+
+  strcpy_P(month, months[currTime.Month]);
+  sprintf_P(buff, PSTR("%3s%02hhu %s 20%02hhu"), "", currTime.Day, month, currTime.Year);
+  Serial.print("makeDateStr:");
+  Serial.println(buff);
+}
+
+void showDateStr()
+{
+  char buff[21];
+  makeDateStr(buff);
+//  setMenuOption(1, buff, NULL, selectDate);
+}
+
+void timeFunc()
+{
+  // Create copy of current time & date
+//  memcpy(&timeDataSet, &timeData, sizeof(s_time));
 //
-//  display.setTextColor(BLACK);
-//  display.setTextSize(1);
+//  setMenuInfo(OPTION_COUNT, PSTR("  < TIME & DATE >"), MENU_TYPE_STR, mSelect, mUp, mDown);
+
+  showDateStr();
+//  showTimeStr();
+//  setMenuOption_P(5, PSTR("Save"), NULL, saveTimeDate);
+//  setMenuOption_P(OPTION_EXIT, menuBack, NULL, back);
 //
-//  display.print("Here1");
-//  display.refresh();
+//  setPrevMenuOpen(&prevMenuData, mTimeDateOpen);
+//
+//  menuData.selected = 1;
+//  
+//  beginAnimation2(NULL);
 }
 
 void initializeMenu()
@@ -86,7 +125,7 @@ void initializeMenu()
 //  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
 //  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
 
-  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date/Time"), menu_clockBitmaps, mainFunc);
+  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
   menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Exit"), menu_exitBitmaps, MENU_EXIT);
 //  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
 //  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
@@ -113,13 +152,43 @@ void RTC_int() //ISR for RTC interrupt overy minute
   enableInterrupts();
 }
 
-void myISR() //ISR for button presses
+void buttonISR_M() //ISR for Middle button presses
 {
   disableInterrupts();  // This must exist, especially with the LOW trigger.  For some reason
   // when a LOW is interrupt trigger is received it continues to fire and locks the processor.
   // I am using a LOW trigger as I am planning to put the processor into deep sleep where the clocks
-  // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.
+  // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.\
   
+  pinValM = true;
+
+  buttonRead = !buttonRead;
+  buttonFired = true;
+  enableInterrupts();
+}
+
+void buttonISR_U() //ISR for Up button presses
+{
+  disableInterrupts();  // This must exist, especially with the LOW trigger.  For some reason
+  // when a LOW is interrupt trigger is received it continues to fire and locks the processor.
+  // I am using a LOW trigger as I am planning to put the processor into deep sleep where the clocks
+  // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.\
+  
+  pinValU = true;
+
+  buttonRead = !buttonRead;
+  buttonFired = true;
+  enableInterrupts();
+}
+
+void buttonISR_D() //ISR for Down button presses
+{
+  disableInterrupts();  // This must exist, especially with the LOW trigger.  For some reason
+  // when a LOW is interrupt trigger is received it continues to fire and locks the processor.
+  // I am using a LOW trigger as I am planning to put the processor into deep sleep where the clocks
+  // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.\
+  
+  pinValD = true;
+
   buttonRead = !buttonRead;
   buttonFired = true;
   enableInterrupts();
@@ -148,9 +217,9 @@ void initializeRTC()
   MyDS3232.alarmInterrupt(ALARM_2, false);
 
   // Attach button and RTC interrupt routine to the pins.
-  attachInterrupt(digitalPinToInterrupt(MBUT), myISR, LOW); // when button B is pressed display 
-  attachInterrupt(digitalPinToInterrupt(UBUT), myISR, LOW); // when button C is pressed display 
-  attachInterrupt(digitalPinToInterrupt(DBUT), myISR, LOW); // when button C is pressed display battery status
+  attachInterrupt(digitalPinToInterrupt(MBUT), buttonISR_M, LOW); // when button B is pressed display 
+  attachInterrupt(digitalPinToInterrupt(UBUT), buttonISR_U, LOW); // when button C is pressed display 
+  attachInterrupt(digitalPinToInterrupt(DBUT), buttonISR_D, LOW); // when button C is pressed display battery status
   attachInterrupt(digitalPinToInterrupt(RTC_INT), RTC_int, LOW); // RTC Interrupt
 
   // Set RTC to interrupt every second for now just to make sure it works.
@@ -318,45 +387,70 @@ void loop(void)
   // See if a button fired and woke up the processor.
   if (buttonFired)
   {
-  Serial.print("buttonFired=");
-  Serial.println(buttonFired);
+//  Serial.print("buttonFired=");
+//  Serial.println(buttonFired);
     buttonFired = false;
+
+    // get the current time in millis
+    long pressStart = millis();
     
-    uint8_t pinValM = digitalRead(MBUT);
-  Serial.print("pinValM=");
-  Serial.println(pinValM);
-#ifdef SLEEP_PROCESSOR
-    if (pinValM == 0)
-#endif
+Serial.print("pressStart=");
+Serial.println(pressStart);
+    while(true)
     {
+      delay(10);
       rtcRead = !rtcRead;
 
       bool animating = menu.updateMenu();
       display.refresh();
-      // Screen must be refreshed at least once per second
+
       while (animating)
       {
 //        display.clearDisplayBuffer();
         display.fillRect(0, 64, 128, 128, WHITE);
         animating = menu.updateMenu();
         display.refresh();
-        delay(50);
-      }  
-    }
-  
-    uint8_t pinValD = digitalRead(DBUT);
-    if (pinValD == 0)
-    {
-      rtcRead = !rtcRead;
-    }
-      
-    uint8_t pinValU = digitalRead(UBUT);
-    if (pinValU == 0)
-    {
-      rtcRead = !rtcRead;
-    }
+        delay(20);
+      }
+    
+//Serial.println("looping");
+      if (pinValM)
+      {
+        pinValM = false;
+        pressStart = millis();    // Reset the idle as we had a keypress
+//Serial.print("pinValM=");
+//Serial.println(pinValM);
+//        menu.selectOption(); 
+      }
+      if (pinValD)
+      {
+        pinValD = false;
+        pressStart = millis();    // Reset the idle as we had a keypress
+//Serial.print("pinValD=");
+//Serial.println(pinValD);
+        menu.downOption();
+      }
+        
+      if (pinValU)
+      {
+        pinValU = false;
+//Serial.print("pinValU=");
+//Serial.println(pinValU);
+        pressStart = millis();  // Reset the idle as we had a keypress
+        menu.upOption();
+      }
+      // See if inactive and get out.
+      long inactiveTimer = millis() - pressStart;
+//Serial.print("inactiveTimer=");
+//Serial.println(inactiveTimer);
+      if (inactiveTimer > INACTIVITY)
+      {
+//Serial.println("getout");
+        menu.resetMenu();
+        break;
+      }
+    }// while
   }
-
   digitalWrite(LED, rtcRead ? HIGH : LOW);
 }
 
