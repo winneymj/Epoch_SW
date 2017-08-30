@@ -25,10 +25,13 @@
 
 #define EVERY_SECOND
 //#define EVERY_MINUTE
-#define SLEEP_PROCESSOR
+//#define SLEEP_PROCESSOR
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
+WatchMenu dateTimeMenu(display);
+WatchMenu *currentMenu = &menu;
+
 volatile boolean buttonRead = false; //variables in ISR need to be volatile
 volatile boolean buttonFired = false; //variables in ISR need to be volatile
 volatile boolean rtcRead = false; //variables in ISR need to be volatile
@@ -76,12 +79,17 @@ void disableInterrupts()
 
 void makeDateStr(char* buff)
 {
-  char month[4];
+  char month[4] = {0};
   tmElements_t currTime;
   MyDS3232.read(currTime);
 
   strcpy_P(month, months[currTime.Month]);
-  sprintf_P(buff, PSTR("%3s%02hhu %s 20%02hhu"), "", currTime.Day, month, currTime.Year);
+//  sprintf_P(buff, PSTR("%3s%02hhu %s 20%02hhu"), "", currTime.Day, month, currTime.Year);
+  sprintf_P(buff, PSTR("%02u %s %02u"), currTime.Day, month, currTime.Year);
+  Serial.print("currTime.Day:");
+  Serial.println(currTime.Day);
+  Serial.print("makeDateStr-month:");
+  Serial.println(month);
   Serial.print("makeDateStr:");
   Serial.println(buff);
 }
@@ -93,14 +101,37 @@ void showDateStr()
 //  setMenuOption(1, buff, NULL, selectDate);
 }
 
+void saveTimeFunc()
+{
+  
+}
+
 void timeFunc()
 {
+#ifndef SLEEP_PROCESSOR
+Serial.println("timeFunc(): Enter");
+#endif
+  dateTimeMenu.setTextSize(0);
+  
+  dateTimeMenu.initMenu(1);  // Create a menu system with ? menu rows
+  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 6, PSTR("  < TIME & DATE >"), MENU_TYPE_STR);
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, 5, PSTR("Save"), NULL, saveTimeFunc); // Position 5
+
+  // Point to date/time menu
+  currentMenu = &dateTimeMenu;
+
+    display.fillRect(0, 64, 128, 128, WHITE); // Clear display
+//    display.refresh();
+//    bool animating = dateTimeMenu.updateMenu();
+//    display.refresh();
+
+
   // Create copy of current time & date
 //  memcpy(&timeDataSet, &timeData, sizeof(s_time));
 //
 //  setMenuInfo(OPTION_COUNT, PSTR("  < TIME & DATE >"), MENU_TYPE_STR, mSelect, mUp, mDown);
 
-  showDateStr();
+//  showDateStr();
 //  showTimeStr();
 //  setMenuOption_P(5, PSTR("Save"), NULL, saveTimeDate);
 //  setMenuOption_P(OPTION_EXIT, menuBack, NULL, back);
@@ -110,12 +141,16 @@ void timeFunc()
 //  menuData.selected = 1;
 //  
 //  beginAnimation2(NULL);
+#ifndef SLEEP_PROCESSOR
+Serial.println("timeFunc(): Exit");
+#endif
 }
 
 void initializeMenu()
 {
 #define NUM_MENUS           3
 #define MENU_MAIN_INDEX     0
+#define MENU_DATE_TIME_INDEX     1
 
   menu.setTextSize(0);
   
@@ -136,6 +171,7 @@ void initializeMenu()
 //
 //  menu.createOption(MENU_SUB_SUB_INDEX, 0, PSTR("3.1st Option"), menu_wirelessBitmaps, alarmFunc);
 //  menu.createOption(MENU_SUB_SUB_INDEX, 1, PSTR("3.Exit Option"), menu_exitBitmaps, MENU_EXIT);
+
 
   //!!!! Remove this later after buttons implemented  !!!!!!!
 //  handleDefaultSelectOption();
@@ -391,24 +427,31 @@ void loop(void)
 //  Serial.println(buttonFired);
     buttonFired = false;
 
+    // Clear which button was pressed.
+    pinValM = false;
+    pinValU = false;
+    pinValD = false;
+    
     // get the current time in millis
     long pressStart = millis();
     
+#ifndef SLEEP_PROCESSOR
 Serial.print("pressStart=");
 Serial.println(pressStart);
+#endif
     while(true)
     {
       delay(10);
       rtcRead = !rtcRead;
 
-      bool animating = menu.updateMenu();
+      bool animating = currentMenu->updateMenu();
       display.refresh();
 
       while (animating)
       {
 //        display.clearDisplayBuffer();
         display.fillRect(0, 64, 128, 128, WHITE);
-        animating = menu.updateMenu();
+        animating = currentMenu->updateMenu();
         display.refresh();
         delay(20);
       }
@@ -418,26 +461,32 @@ Serial.println(pressStart);
       {
         pinValM = false;
         pressStart = millis();    // Reset the idle as we had a keypress
-//Serial.print("pinValM=");
-//Serial.println(pinValM);
-//        menu.selectOption(); 
+#ifndef SLEEP_PROCESSOR
+Serial.print("pinValM=");
+Serial.println(pinValM);
+#endif
+        currentMenu->selectOption(); 
       }
       if (pinValD)
       {
         pinValD = false;
         pressStart = millis();    // Reset the idle as we had a keypress
-//Serial.print("pinValD=");
-//Serial.println(pinValD);
-        menu.downOption();
+#ifndef SLEEP_PROCESSOR
+Serial.print("pinValD=");
+Serial.println(pinValD);
+#endif
+        currentMenu->downOption();
       }
         
       if (pinValU)
       {
         pinValU = false;
-//Serial.print("pinValU=");
-//Serial.println(pinValU);
+#ifndef SLEEP_PROCESSOR
+Serial.print("pinValU=");
+Serial.println(pinValU);
+#endif
         pressStart = millis();  // Reset the idle as we had a keypress
-        menu.upOption();
+        currentMenu->upOption();
       }
       // See if inactive and get out.
       long inactiveTimer = millis() - pressStart;
