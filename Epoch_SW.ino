@@ -77,6 +77,13 @@ void disableInterrupts()
   while (EIC->STATUS.bit.SYNCBUSY == 1) { }
 }
 
+void selectDate()
+{
+}
+void selectTime()
+{
+}
+
 void makeDateStr(char* buff)
 {
   char month[4] = {0};
@@ -85,20 +92,30 @@ void makeDateStr(char* buff)
 
   strcpy_P(month, months[currTime.Month]);
 //  sprintf_P(buff, PSTR("%3s%02hhu %s 20%02hhu"), "", currTime.Day, month, currTime.Year);
-  sprintf_P(buff, PSTR("%02u %s %02u"), currTime.Day, month, currTime.Year);
-  Serial.print("currTime.Day:");
-  Serial.println(currTime.Day);
-  Serial.print("makeDateStr-month:");
-  Serial.println(month);
-  Serial.print("makeDateStr:");
-  Serial.println(buff);
+  sprintf_P(buff, PSTR("%3s%02u %s %02u"), "", currTime.Day, month, currTime.Year);
 }
 
 void showDateStr()
 {
   char buff[21];
   makeDateStr(buff);
-//  setMenuOption(1, buff, NULL, selectDate);
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, 1, buff, NULL, selectDate); // Position 1
+}
+
+void showTimeStr()
+{
+  char buff[12];
+  makeTimeStr(buff);
+//  setMenuOption(3, buff, NULL, selectTime);
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, 3, buff, NULL, selectTime); // Position 3
+}
+
+void makeTimeStr(char* buff)
+{
+  tmElements_t currTime;
+  MyDS3232.read(currTime);
+
+  sprintf_P(buff, PSTR("%6s%02u:%02u"), "", currTime.Hour, currTime.Minute);
 }
 
 void saveTimeFunc()
@@ -120,7 +137,10 @@ Serial.println("timeFunc(): Enter");
   // Point to date/time menu
   currentMenu = &dateTimeMenu;
 
-    display.fillRect(0, 64, 128, 128, WHITE); // Clear display
+  showDateStr();
+  showTimeStr();
+
+  display.fillRect(0, 64, 128, 128, WHITE); // Clear display
 //    display.refresh();
 //    bool animating = dateTimeMenu.updateMenu();
 //    display.refresh();
@@ -131,7 +151,6 @@ Serial.println("timeFunc(): Enter");
 //
 //  setMenuInfo(OPTION_COUNT, PSTR("  < TIME & DATE >"), MENU_TYPE_STR, mSelect, mUp, mDown);
 
-//  showDateStr();
 //  showTimeStr();
 //  setMenuOption_P(5, PSTR("Save"), NULL, saveTimeDate);
 //  setMenuOption_P(OPTION_EXIT, menuBack, NULL, back);
@@ -444,6 +463,7 @@ Serial.println(pressStart);
       delay(10);
       rtcRead = !rtcRead;
 
+      display.fillRect(0, 64, 128, 128, WHITE);
       bool animating = currentMenu->updateMenu();
       display.refresh();
 
