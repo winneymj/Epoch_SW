@@ -27,9 +27,11 @@
 //#define EVERY_MINUTE
 //#define SLEEP_PROCESSOR
 
+extern void timeFunc();
+
+
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
-WatchMenu dateTimeMenu(display);
 WatchMenu *currentMenu = &menu;
 
 volatile boolean buttonRead = false; //variables in ISR need to be volatile
@@ -47,22 +49,6 @@ byte activeTime = 15; //how many sec until entering standby
 unsigned long standbyTimer;
 boolean active = false;
 
-const char months[12][4] PROGMEM = {
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec"
-};
-
-
 void enableInterrupts()
 {
   // Enable EIC
@@ -77,92 +63,20 @@ void disableInterrupts()
   while (EIC->STATUS.bit.SYNCBUSY == 1) { }
 }
 
-void selectDate()
-{
-}
-void selectTime()
-{
-}
-
-void makeDateStr(char* buff)
-{
-  char month[4] = {0};
-  tmElements_t currTime;
-  MyDS3232.read(currTime);
-
-  strcpy_P(month, months[currTime.Month]);
-//  sprintf_P(buff, PSTR("%3s%02hhu %s 20%02hhu"), "", currTime.Day, month, currTime.Year);
-  sprintf_P(buff, PSTR("%3s%02u %s %02u"), "", currTime.Day, month, currTime.Year);
-}
-
-void showDateStr()
-{
-  char buff[21];
-  makeDateStr(buff);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, 1, buff, NULL, selectDate); // Position 1
-}
-
-void showTimeStr()
-{
-  char buff[12];
-  makeTimeStr(buff);
-//  setMenuOption(3, buff, NULL, selectTime);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, 3, buff, NULL, selectTime); // Position 3
-}
-
-void makeTimeStr(char* buff)
-{
-  tmElements_t currTime;
-  MyDS3232.read(currTime);
-
-  sprintf_P(buff, PSTR("%6s%02u:%02u"), "", currTime.Hour, currTime.Minute);
-}
-
-void saveTimeFunc()
-{
-  
-}
-
-void timeFunc()
+void menuDownFunc()
 {
 #ifndef SLEEP_PROCESSOR
-Serial.println("timeFunc(): Enter");
+Serial.println("menuDownFunc(): Enter");
 #endif
-  dateTimeMenu.setTextSize(0);
-  
-  dateTimeMenu.initMenu(1);  // Create a menu system with ? menu rows
-  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 6, PSTR("  < TIME & DATE >"), MENU_TYPE_STR);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, 5, PSTR("Save"), NULL, saveTimeFunc); // Position 5
+  menu.downOption();
+}
 
-  // Point to date/time menu
-  currentMenu = &dateTimeMenu;
-
-  showDateStr();
-  showTimeStr();
-
-  display.fillRect(0, 64, 128, 128, WHITE); // Clear display
-//    display.refresh();
-//    bool animating = dateTimeMenu.updateMenu();
-//    display.refresh();
-
-
-  // Create copy of current time & date
-//  memcpy(&timeDataSet, &timeData, sizeof(s_time));
-//
-//  setMenuInfo(OPTION_COUNT, PSTR("  < TIME & DATE >"), MENU_TYPE_STR, mSelect, mUp, mDown);
-
-//  showTimeStr();
-//  setMenuOption_P(5, PSTR("Save"), NULL, saveTimeDate);
-//  setMenuOption_P(OPTION_EXIT, menuBack, NULL, back);
-//
-//  setPrevMenuOpen(&prevMenuData, mTimeDateOpen);
-//
-//  menuData.selected = 1;
-//  
-//  beginAnimation2(NULL);
+void menuUpFunc()
+{
 #ifndef SLEEP_PROCESSOR
-Serial.println("timeFunc(): Exit");
+Serial.println("menuUpFunc(): Enter");
 #endif
+  menu.upOption();
 }
 
 void initializeMenu()
@@ -175,7 +89,7 @@ void initializeMenu()
   
   menu.initMenu(1);  // Create a menu system with ? menu rows
   
-  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >")); // 3 options
+  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
 //  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
 //  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
 
@@ -495,7 +409,7 @@ Serial.println(pinValM);
 Serial.print("pinValD=");
 Serial.println(pinValD);
 #endif
-        currentMenu->downOption();
+        currentMenu->menuDown();
       }
         
       if (pinValU)
@@ -506,7 +420,7 @@ Serial.print("pinValU=");
 Serial.println(pinValU);
 #endif
         pressStart = millis();  // Reset the idle as we had a keypress
-        currentMenu->upOption();
+        currentMenu->menuUp();
       }
       // See if inactive and get out.
       long inactiveTimer = millis() - pressStart;
