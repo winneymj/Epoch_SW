@@ -36,11 +36,13 @@ void showDateStr();
 #define SETTING_NOW_10MIN 3
 #define SETTING_NOW_1MIN  4
 
-#define SETTING_NOW_DATE10 5
-#define SETTING_NOW_DATE1 6
+#define SETTING_NOW_DAY10 5
+#define SETTING_NOW_DAY1 6
 #define SETTING_NOW_MONTH 7
 #define SETTING_NOW_YEAR10 8
 #define SETTING_NOW_YEAR1 9
+
+#define YPOS    64
 
 const char months[12][4] PROGMEM = {
   "Jan",
@@ -78,41 +80,59 @@ byte time_dow(int y, byte m, byte d)
 
 void dateDraw()
 {
+#ifndef SLEEP_PROCESSOR
+Serial.println("dateDraw(): Enter");
+#endif
   byte x;
   byte w = 5;
   switch(setting.now)
   {
-    case SETTING_NOW_DATE10:
-    x = 28;
+    case SETTING_NOW_DAY10:
+#ifndef SLEEP_PROCESSOR
+Serial.println("dateDraw(): SETTING_NOW_DAY10");
+#endif
+    x = 23;
     break;
-  case SETTING_NOW_DATE1:
-    x = 35;
+  case SETTING_NOW_DAY1:
+#ifndef SLEEP_PROCESSOR
+Serial.println("dateDraw(): SETTING_NOW_DAY1");
+#endif
+    x = 30;
     break;
   case SETTING_NOW_MONTH:
-    x = 49;
+#ifndef SLEEP_PROCESSOR
+Serial.println("dateDraw(): SETTING_NOW_MONTH");
+#endif
+    x = 42;
     w = 17;
     break;
   case SETTING_NOW_YEAR10:
-    x = 91;
+#ifndef SLEEP_PROCESSOR
+Serial.println("dateDraw(): SETTING_NOW_YEAR10");
+#endif
+    x = 66;
     break;
   case SETTING_NOW_YEAR1:
-    x = 98;
+#ifndef SLEEP_PROCESSOR
+Serial.println("dateDraw(): SETTING_NOW_YEAR1");
+#endif
+    x = 72;
     break;
   default:
     x = 0;
 //    return DISPLAY_DONE;
   }
   
-  display.fillRect(x, 16, w, w, WHITE);
+//  display.fillRect(x, YPOS + 16, w, 7, WHITE);
 //  draw_clearArea(x, 16, w);
   
   char buff[4];
   if(setting.now != SETTING_NOW_MONTH)
-    sprintf_P(buff, PSTR("%hhu"), setting.val);
+    sprintf_P(buff, PSTR("%1u"), setting.val);
   else
     strcpy_P(buff, months[setting.val]);
 
-  dateTimeMenu.drawString(buff, true, x, 16);
+  dateTimeMenu.drawString(buff, true, x, YPOS + 16);
 
 //draw_string(buff, true, x, 16);
   
@@ -136,10 +156,10 @@ byte getMaxValForSetting()
     case SETTING_NOW_1MIN:
       max = 9;
       break;
-    case SETTING_NOW_DATE10:
+    case SETTING_NOW_DAY10:
       max = 3;
       break;
-    case SETTING_NOW_DATE1:
+    case SETTING_NOW_DAY1:
       max = 9;
       break;
     case SETTING_NOW_MONTH:
@@ -185,18 +205,18 @@ Serial.println("selectDate(): Enter");
   switch(setting.now)
   {
     case SETTING_NOW_NONE:
-      setting.now = SETTING_NOW_DATE10;
+      setting.now = SETTING_NOW_DAY10;
       setting.val = timeDataSet.Day / 10;
       break;
-    case SETTING_NOW_DATE10:
+    case SETTING_NOW_DAY10:
       {
         byte mod = timeDataSet.Day % 10;
         timeDataSet.Day = (setting.val * 10) + mod;
-        setting.now = SETTING_NOW_DATE1;
+        setting.now = SETTING_NOW_DAY1;
         setting.val = mod;
       }
       break;
-    case SETTING_NOW_DATE1:
+    case SETTING_NOW_DAY1:
       timeDataSet.Day = ((timeDataSet.Day / 10) * 10) + setting.val;
       if(timeDataSet.Day < 1)
         timeDataSet.Day = 1;
