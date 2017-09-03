@@ -28,6 +28,7 @@
 //#define SLEEP_PROCESSOR
 
 extern void timeFunc();
+extern const GFXfont courier_10x15FontInfo;
 
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
@@ -85,11 +86,12 @@ void initializeMenu()
 #define MENU_MAIN_INDEX     0
 #define MENU_DATE_TIME_INDEX     1
 
-  menu.setTextSize(0);
+  menu.setTextSize(1);
+  menu.setFont(&courier_10x15FontInfo);
   
   menu.initMenu(1);  // Create a menu system with ? menu rows
   
-  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("< MAIN MENU >"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
+  menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
 //  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
 //  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
 

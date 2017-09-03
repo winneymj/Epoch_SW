@@ -11,6 +11,7 @@
  #define PROGMEM
 #endif
 
+#include "gfxfont.h"
 #include "resources.h"
 
 // Character bitmaps for Arial Narrow 48pt
