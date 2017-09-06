@@ -21,7 +21,7 @@
 #define DBUT 22
 #define RTC_INT 9
 
-#define INACTIVITY 10000
+#define INACTIVITY 30000
 
 #define EVERY_SECOND
 //#define EVERY_MINUTE
