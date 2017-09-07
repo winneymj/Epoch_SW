@@ -92,20 +92,8 @@ void initializeMenu()
   menu.initMenu(1);  // Create a menu system with ? menu rows
   
   menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
-//  menu.createMenu(MENU_SUB_INDEX, 3, PSTR("< SET TIME >")); // 3 options
-//  menu.createMenu(MENU_SUB_SUB_INDEX, 2, PSTR("< SLEEP >")); // 2 options
-
   menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
   menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Exit"), menu_exitBitmaps, MENU_EXIT);
-//  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Scroll Speed"), menu_speedBitmaps, setDisplaySpeedFunc);
-//  menu.createOption(MENU_MAIN_INDEX, 3, PSTR("Exit"), menu_exitBitmaps, backtoSchedule);
-
-//  menu.createOption(MENU_SUB_INDEX, 0, PSTR("2.1st Option"), menu_alarmBitmaps, alarmFunc);
-//  menu.createOption(MENU_SUB_INDEX, 1, PSTR("2.2nd Option"), menu_alarmBitmaps, MENU_SUB_SUB_INDEX);
-//  menu.createOption(MENU_SUB_INDEX, 2, PSTR("2.Exit Option"), menu_exitBitmaps, MENU_EXIT);
-//
-//  menu.createOption(MENU_SUB_SUB_INDEX, 0, PSTR("3.1st Option"), menu_wirelessBitmaps, alarmFunc);
-//  menu.createOption(MENU_SUB_SUB_INDEX, 1, PSTR("3.Exit Option"), menu_exitBitmaps, MENU_EXIT);
 
 
   //!!!! Remove this later after buttons implemented  !!!!!!!
@@ -321,10 +309,10 @@ void displayTime(tmElements_t currTime)
   xpos += displayChar(xpos, 10, currTime.Hour / 10);
   xpos += displayChar(xpos, 10, currTime.Hour % 10);
   xpos += displayColon(xpos, 20);
-//  xpos += displayChar(xpos, 10, currTime.Minute / 10);
-//  xpos += displayChar(xpos, 10, currTime.Minute % 10);
-  xpos += displayChar(xpos, 10, currTime.Second / 10);
-  xpos += displayChar(xpos, 10, currTime.Second % 10);
+  xpos += displayChar(xpos, 10, currTime.Minute / 10);
+  xpos += displayChar(xpos, 10, currTime.Minute % 10);
+//  xpos += displayChar(xpos, 10, currTime.Second / 10);
+//  xpos += displayChar(xpos, 10, currTime.Second % 10);
 
   // Display the time.  Writes the entire buffer to the display
   display.refresh();

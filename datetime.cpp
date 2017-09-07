@@ -20,6 +20,7 @@ extern Adafruit_SharpMem display;
 extern WatchMenu *currentMenu;
 extern DS3232RTC MyDS3232;
 extern const GFXfont courier_10x15FontInfo;
+extern WatchMenu menu;
 
 s_menuNowSetting setting;
 WatchMenu dateTimeMenu(display);
@@ -32,6 +33,7 @@ void showDateStr();
 void showTimeStr();
 void saveTimeFunc();
 void timeDraw();
+void back();
 
 
 #define SETTING_NOW_NONE  0
@@ -88,18 +90,25 @@ void timeFunc()
 #ifndef SLEEP_PROCESSOR
 Serial.println("timeFunc(): Enter");
 #endif
+
   tmElements_t currTime;
   MyDS3232.read(currTime);
 
   // Create copy of current time & date
   memcpy(&timeDataSet, &currTime, sizeof(tmElements_t));
 
+#ifndef SLEEP_PROCESSOR
+Serial.print("timeFunc(): timeDataSet.Year=");
+Serial.println(timeDataSet.Year, DEC);
+#endif
+
   
   dateTimeMenu.initMenu(1);  // Create a menu system with ? menu rows
   dateTimeMenu.setTextSize(1);
   dateTimeMenu.setFont(&courier_10x15FontInfo);
-  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 4, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
+  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 5, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
   dateTimeMenu.createOption(MENU_MAIN_INDEX, 3, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, 4, PSTR("Exit"), NULL, back); // Position 4
 
   showDateStr();
   showTimeStr();
@@ -112,28 +121,20 @@ Serial.println("timeFunc(): Enter");
 
   display.fillRect(0, 64, 128, 128, WHITE); // Clear display
 
-//    display.refresh();
-//    bool animating = dateTimeMenu.updateMenu();
-//    display.refresh();
-
-
-  // Create copy of current time & date
-//  memcpy(&timeDataSet, &timeData, sizeof(s_time));
-//
-//  setMenuInfo(OPTION_COUNT, PSTR("  < TIME & DATE >"), MENU_TYPE_STR, mSelect, mUp, mDown);
-
-//  showTimeStr();
-//  setMenuOption_P(5, PSTR("Save"), NULL, saveTimeDate);
-//  setMenuOption_P(OPTION_EXIT, menuBack, NULL, back);
-//
-//  setPrevMenuOpen(&prevMenuData, mTimeDateOpen);
-//
-//  menuData.selected = 1;
-//  
-//  beginAnimation2(NULL);
 #ifndef SLEEP_PROCESSOR
 Serial.println("timeFunc(): Exit");
 #endif
+}
+
+void back()
+{
+#ifndef SLEEP_PROCESSOR
+Serial.println("back()");
+#endif
+  // Point to top level menu
+  currentMenu = &menu;
+
+//  dateTimeMenu.prevMenu != NULL ? dateTimeMenu.prevMenu() : mMainOpen();
 }
 
 void dateDraw()
@@ -256,10 +257,6 @@ Serial.println("selectDate(): Enter");
     case SETTING_NOW_NONE:
       setting.now = SETTING_NOW_DAY10;
       setting.val = timeDataSet.Day / 10;
-#ifndef SLEEP_PROCESSOR
-Serial.print("selectDate(): timeDataSet.Day=");
-Serial.println(timeDataSet.Day);
-#endif
       break;
     case SETTING_NOW_DAY10:
       {
@@ -267,10 +264,6 @@ Serial.println(timeDataSet.Day);
         timeDataSet.Day = (setting.val * 10) + mod;
         setting.now = SETTING_NOW_DAY1;
         setting.val = mod;
-#ifndef SLEEP_PROCESSOR
-Serial.print("selectDate(): timeDataSet.Day=");
-Serial.println(timeDataSet.Day);
-#endif
       }
       break;
     case SETTING_NOW_DAY1:
@@ -281,10 +274,6 @@ Serial.println(timeDataSet.Day);
         timeDataSet.Day = 31;
       setting.now = SETTING_NOW_MONTH;
       setting.val = timeDataSet.Month;
-#ifndef SLEEP_PROCESSOR
-Serial.print("selectDate(): timeDataSet.Day=");
-Serial.println(timeDataSet.Day);
-#endif
       break;
     case SETTING_NOW_MONTH:
     {
@@ -314,9 +303,6 @@ Serial.println(timeDataSet.Day);
       timeDataSet.Wday = time_dow(timeDataSet.Year + 2000, timeDataSet.Month + 1, timeDataSet.Day);
       setting.now = SETTING_NOW_NONE;
 
-#ifndef SLEEP_PROCESSOR
-Serial.println("selectDate(): SETTING_NOW_NONE");
-#endif
       // Go back to menu selection
       dateTimeMenu.setDownFunc(dateTimeDownFunc);
       dateTimeMenu.setUpFunc(dateTimeUpFunc);
@@ -349,10 +335,6 @@ Serial.println("selectTime(): Enter");
         timeDataSet.Hour = (setting.val * 10) + mod;
         setting.now = SETTING_NOW_1HOUR;
         setting.val = mod;
-#ifndef SLEEP_PROCESSOR
-Serial.print("selectTime(): timeDataSet.Hour=");
-Serial.println(timeDataSet.Hour);
-#endif
       }
       break;
     case SETTING_NOW_1HOUR:
@@ -376,9 +358,6 @@ Serial.println(timeDataSet.Hour);
         timeDataSet.Minute = 59;
       setting.now = SETTING_NOW_NONE;
 
-#ifndef SLEEP_PROCESSOR
-Serial.println("selectTime(): SETTING_NOW_NONE");
-#endif
       // Go back to menu selection
       dateTimeMenu.setDownFunc(dateTimeDownFunc);
       dateTimeMenu.setUpFunc(dateTimeUpFunc);
@@ -419,7 +398,6 @@ void timeDraw()
   char buff[2];
   buff[0] = setting.val + 48;
   buff[1] = 0x00;
-//  draw_string(buff, true, x, 32);
   dateTimeMenu.drawString(buff, true, x, YPOS + ( h * 2 ));
 
 //  return DISPLAY_DONE;
@@ -428,15 +406,7 @@ void timeDraw()
 void makeDateStr(char* buff)
 {
   char month[4] = {0};
-
-#ifndef SLEEP_PROCESSOR
-Serial.print("makeDateStr(): timeDataSet.Day=");
-Serial.println(timeDataSet.Day);
-
-#endif
-
   strcpy_P(month, months[timeDataSet.Month]);
-//  sprintf_P(buff, PSTR("%3s%02hhu %s 20%02hhu"), "", timeDataSet.Day, month, timeDataSet.Year);
   sprintf_P(buff, PSTR("%1s%02u %s %02u"), "", timeDataSet.Day, month, timeDataSet.Year);
 }
 
@@ -456,29 +426,22 @@ void showTimeStr()
 {
   char buff[12];
   makeTimeStr(buff);
-//  setMenuOption(3, buff, NULL, selectTime);
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_INDEX, buff, NULL, selectTime); // Position 3
-}
-
-void saveTimeFunc()
-{
-  
 }
 
 void dateTimeDownFunc()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("menuDownFunc(): Enter");
-#endif
   dateTimeMenu.downOption();
 }
 
 void dateTimeUpFunc()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("menuUpFunc(): Enter");
-#endif
   dateTimeMenu.upOption();
+}
+
+void saveTimeFunc()
+{
+  MyDS3232.write(timeDataSet);
 }
 
 
