@@ -31,9 +31,13 @@ extern void timeFunc();
 extern const GFXfont courier_10x15FontInfo;
 
 
+void displayTime();
+
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu menu(display);
 WatchMenu *currentMenu = &menu;
+pFunc drawFunc = displayTime;
+bool menuExit = false;
 
 volatile boolean buttonRead = false; //variables in ISR need to be volatile
 volatile boolean buttonFired = false; //variables in ISR need to be volatile
@@ -80,6 +84,18 @@ Serial.println("menuUpFunc(): Enter");
   menu.upOption();
 }
 
+void exitMenu()
+{
+#ifndef SLEEP_PROCESSOR
+Serial.println("exitMenu(): Enter");
+#endif
+  // Clear down bottom of the screen
+  display.fillRect(0, 64, 128, 128, WHITE);
+//  display.refresh();
+  drawFunc = displayTime;
+  menuExit = true;
+}
+
 void initializeMenu()
 {
 #define NUM_MENUS           3
@@ -93,7 +109,7 @@ void initializeMenu()
   
   menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
   menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
-  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Exit"), menu_exitBitmaps, MENU_EXIT);
+  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Exit"), menu_exitBitmaps, exitMenu);
 
 
   //!!!! Remove this later after buttons implemented  !!!!!!!
@@ -237,8 +253,9 @@ void setup()
   Serial.begin(9600);
 //  while (!Serial); 
 
+#ifndef SLEEP_PROCESSOR
   Serial.println("setup: enter");
-
+#endif
   // Set up communications
   Wire.begin();
 
@@ -262,16 +279,9 @@ void setup()
   // Initialise the display
   initializeMenu();
 
-//  pinMode(EXTMODE, OUTPUT);
-//  digitalWrite(EXTMODE, LOW); // switch VCOM to software
-
-  //standbyTimer = millis()+activeTime*1000;
-
-//  buttonMid.read();
-//  buttonUp.read();
-//  buttonDown.read();
-
+#ifndef SLEEP_PROCESSOR
   Serial.println("setup: exit");
+#endif
 }
 
 // Font data for Arial 48pt
@@ -309,45 +319,111 @@ void displayTime(tmElements_t currTime)
   xpos += displayChar(xpos, 10, currTime.Hour / 10);
   xpos += displayChar(xpos, 10, currTime.Hour % 10);
   xpos += displayColon(xpos, 20);
-  xpos += displayChar(xpos, 10, currTime.Minute / 10);
-  xpos += displayChar(xpos, 10, currTime.Minute % 10);
-//  xpos += displayChar(xpos, 10, currTime.Second / 10);
-//  xpos += displayChar(xpos, 10, currTime.Second % 10);
+//  xpos += displayChar(xpos, 10, currTime.Minute / 10);
+//  xpos += displayChar(xpos, 10, currTime.Minute % 10);
+  xpos += displayChar(xpos, 10, currTime.Second / 10);
+  xpos += displayChar(xpos, 10, currTime.Second % 10);
 
   // Display the time.  Writes the entire buffer to the display
   display.refresh();
 }
 
-void loop(void) 
+void displayTime()
 {
-  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
-
-#ifdef SLEEP_PROCESSOR
-  // Sleep and wait for interrupt from buttons or RTC
-  sleepProcessor();
-#else
-  delay(1000);
-#endif
-
-  digitalWrite(EXTMODE, LOW); // switch VCOM to software.
-
-  // If this is a RTC interrupt then need to
-  // get the time and display it.
-  if (rtcFired)
-  {
-    rtcFired = false;
     // Get the time from the RTC
     tmElements_t currTime;
     MyDS3232.read(currTime);
 
     displayTime(currTime);
-  }
+}
 
-  // See if a button fired and woke up the processor.
-  if (buttonFired)
+void displayMenu()
+{
+  // get the current time in millis
+  long pressStart = millis();
+    
+  while(!menuExit)
   {
-//  Serial.print("buttonFired=");
-//  Serial.println(buttonFired);
+    delay(10);
+    rtcRead = !rtcRead;
+
+    display.fillRect(0, 64, 128, 128, WHITE);
+    bool animating = currentMenu->updateMenu();
+    display.refresh();
+
+    while (animating)
+    {
+//        display.clearDisplayBuffer();
+      display.fillRect(0, 64, 128, 128, WHITE);
+      animating = currentMenu->updateMenu();
+      display.refresh();
+      delay(20);
+    }
+  
+    if (pinValM)
+    {
+      pinValM = false;
+      pressStart = millis();    // Reset the idle as we had a keypress
+#ifndef SLEEP_PROCESSOR
+Serial.print("pinValM=");
+Serial.println(pinValM);
+#endif
+      currentMenu->selectOption(); 
+    }
+    if (pinValD)
+    {
+      pinValD = false;
+      pressStart = millis();    // Reset the idle as we had a keypress
+#ifndef SLEEP_PROCESSOR
+Serial.print("pinValD=");
+Serial.println(pinValD);
+#endif
+      currentMenu->menuDown();
+    }
+      
+    if (pinValU)
+    {
+      pinValU = false;
+#ifndef SLEEP_PROCESSOR
+Serial.print("pinValU=");
+Serial.println(pinValU);
+#endif
+      pressStart = millis();  // Reset the idle as we had a keypress
+      currentMenu->menuUp();
+    }
+
+    // See if inactive and get out.
+    long inactiveTimer = millis() - pressStart;
+//Serial.print("inactiveTimer=");
+//Serial.println(inactiveTimer);
+    if (inactiveTimer > INACTIVITY)
+    {
+//  Serial.println("getout");
+      exitMenu();
+    }
+  }// while
+
+  menu.resetMenu();
+  menuExit = false;
+}
+
+bool updateDisplay()
+{
+  // If this is a RTC interrupt then need to
+  // get the time and display it.
+  if (rtcFired)
+  {
+    rtcFired = false;
+    displayTime();
+  }
+    
+  // See if middle button fired and woke up the processor.
+  if (buttonFired && pinValM)
+  {
+#ifndef SLEEP_PROCESSOR
+  Serial.print("buttonFired=");
+  Serial.println(buttonFired);
+#endif
     buttonFired = false;
 
     // Clear which button was pressed.
@@ -355,75 +431,38 @@ void loop(void)
     pinValU = false;
     pinValD = false;
     
-    // get the current time in millis
-    long pressStart = millis();
-    
-#ifndef SLEEP_PROCESSOR
-Serial.print("pressStart=");
-Serial.println(pressStart);
-#endif
-    while(true)
-    {
-      delay(10);
-      rtcRead = !rtcRead;
+    drawFunc = displayMenu;
+  }    
 
-      display.fillRect(0, 64, 128, 128, WHITE);
-      bool animating = currentMenu->updateMenu();
-      display.refresh();
-
-      while (animating)
-      {
-//        display.clearDisplayBuffer();
-        display.fillRect(0, 64, 128, 128, WHITE);
-        animating = currentMenu->updateMenu();
-        display.refresh();
-        delay(20);
-      }
-    
-//Serial.println("looping");
-      if (pinValM)
-      {
-        pinValM = false;
-        pressStart = millis();    // Reset the idle as we had a keypress
-#ifndef SLEEP_PROCESSOR
-Serial.print("pinValM=");
-Serial.println(pinValM);
-#endif
-        currentMenu->selectOption(); 
-      }
-      if (pinValD)
-      {
-        pinValD = false;
-        pressStart = millis();    // Reset the idle as we had a keypress
-#ifndef SLEEP_PROCESSOR
-Serial.print("pinValD=");
-Serial.println(pinValD);
-#endif
-        currentMenu->menuDown();
-      }
-        
-      if (pinValU)
-      {
-        pinValU = false;
-#ifndef SLEEP_PROCESSOR
-Serial.print("pinValU=");
-Serial.println(pinValU);
-#endif
-        pressStart = millis();  // Reset the idle as we had a keypress
-        currentMenu->menuUp();
-      }
-      // See if inactive and get out.
-      long inactiveTimer = millis() - pressStart;
-//Serial.print("inactiveTimer=");
-//Serial.println(inactiveTimer);
-      if (inactiveTimer > INACTIVITY)
-      {
-//Serial.println("getout");
-        menu.resetMenu();
-        break;
-      }
-    }// while
+  if (drawFunc != NULL)
+  {
+    drawFunc();  
   }
+  
+}
+
+void loop(void) 
+{
+  // Display something before we sleep
+  updateDisplay();
+  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
+
+  while (true)
+  {
+#ifdef SLEEP_PROCESSOR
+  // Sleep and wait for interrupt from buttons or RTC
+  sleepProcessor();
+#else
+  delay(1000);
+#endif
+
+    digitalWrite(EXTMODE, LOW); // switch VCOM to software.
+
+    updateDisplay();
+
+    digitalWrite(EXTMODE, HIGH); // switch VCOM to external for sleep
+  }
+
   digitalWrite(LED, rtcRead ? HIGH : LOW);
 }
 
