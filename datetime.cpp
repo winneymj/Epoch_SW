@@ -94,6 +94,10 @@ void dateDraw()
   
   byte x;
 
+#ifndef SLEEP_PROCESSOR
+//Serial.print("dateDraw(): setting.now:");
+//Serial.println(setting.now);
+#endif
   switch(setting.now)
   {
     case SETTING_NOW_DAY10:
@@ -112,7 +116,7 @@ void dateDraw()
     x = 10 * w;
     break;
   default:
-    x = 0;
+    return; // Dont draw if no current setting
   }
   
 //  display.fillRect(x, YPOS + 16, w, 7, WHITE);
@@ -125,8 +129,6 @@ void dateDraw()
     strcpy_P(buff, months[setting.val]);
 
   dateTimeMenu.drawString(buff, true, x, YPOS + h);
-
-//draw_string(buff, true, x, 16);
 }
 
 byte getMaxValForSetting()
@@ -243,7 +245,7 @@ Serial.println("selectDate(): Enter");
       timeDataSet.Wday = time_dow(timeDataSet.Year + 2000, timeDataSet.Month + 1, timeDataSet.Day);
       setting.now = SETTING_NOW_NONE;
 
-      // Go back to menu selection
+      // Go back to menu mechanism of selecting the next option.
       dateTimeMenu.setDownFunc(dateTimeDownFunc);
       dateTimeMenu.setUpFunc(dateTimeUpFunc);
       dateTimeMenu.setDrawFunc(NULL);
@@ -371,17 +373,20 @@ void showTimeStr()
 
 void dateTimeDownFunc()
 {
-  dateTimeMenu.downOption();
+  dateTimeMenu.upOption();
 }
 
 void dateTimeUpFunc()
 {
-  dateTimeMenu.upOption();
+  dateTimeMenu.downOption();
 }
 
 void saveTimeFunc()
 {
   MyDS3232.write(timeDataSet);
+
+  // Change the option text to Saved
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, 3, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 
 }
 
 

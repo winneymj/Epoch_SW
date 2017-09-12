@@ -7,42 +7,16 @@
 #else
  #define PROGMEM
 #endif
-#include <Time.h>         //http://www.arduino.cc/playground/Code/Time  
-#include <TimeLib.h>         //http://www.arduino.cc/playground/Code/Time  
+
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SharpMem.h>
 #include <Watch_Menu.h>
-#include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
-#include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
 #include "icons.h"
-#include "resources.h"
-
-#define INACTIVITY 30000
+#include "menu.h"
 
 // Font data for Arial 48pt
-
-extern const uint8_t arialNarrow_48ptBitmaps[];
-extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[];
-extern const uint8_t calibri_48ptBitmaps_colon[];
-extern const FONT_CHAR_INFO calibri_48ptDescriptors_colon[];
-extern Adafruit_SharpMem display;
-extern DS3232RTC MyDS3232;
-extern const GFXfont courier_10x15FontInfo;
-extern volatile boolean rtcRead;
-extern WatchMenu *currentMenu;
-extern volatile uint8_t pinValM;
-extern volatile uint8_t pinValD;
-extern volatile uint8_t pinValU;
-extern pFunc drawFunc;
-extern void displayTime();
-
-// Forward Declarations
-void timeFunc();
-void exitMenu();
-void menuUpFunc();
-void menuDownFunc();
 
 // Locals
 WatchMenu menu(display);

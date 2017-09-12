@@ -256,12 +256,6 @@ bool updateDisplay()
     // Display the menu on button press
     displayMenu();
   }    
-
-//  if (drawFunc != NULL)
-//  {
-//    drawFunc();  
-//  }
-  
 }
 
 void loop(void) 
@@ -279,9 +273,7 @@ void loop(void)
   delay(1000);
 #endif
 
-//#ifndef SLEEP_PROCESSOR
-//  Serial.println("looping");
-//#endif
+    // If we got here we were woken up by interrupt
     digitalWrite(EXTMODE, LOW); // switch VCOM to software.
 
     updateDisplay();
