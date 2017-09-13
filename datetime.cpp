@@ -30,6 +30,10 @@ byte time_dow(int y, byte m, byte d)
   return dow;
 }
 
+//------------------------------------------------------------
+// Method is called when the date/time menu option is selected.
+// It creates a new String type menu (as opposed to Icon).
+//------------------------------------------------------------
 void timeFunc()
 {
 #ifndef SLEEP_PROCESSOR
@@ -66,9 +70,6 @@ Serial.println(timeDataSet.Year, DEC);
 
   display.fillRect(0, 64, 128, 128, WHITE); // Clear display
 
-  // Set the drawing function
-  dateTimeMenu.setDrawFunc(dateDraw);
-
 #ifndef SLEEP_PROCESSOR
 Serial.println("timeFunc(): Exit");
 #endif
@@ -83,6 +84,10 @@ Serial.println("back()");
   currentMenu = &menu;
 }
 
+//-------------------------------------------------------------- 
+// Method draws the selection highlight when changing the date.
+// The character highlight is reversed so it can be seen
+//-------------------------------------------------------------- 
 void dateDraw()
 {
 #ifndef SLEEP_PROCESSOR
@@ -119,15 +124,13 @@ void dateDraw()
     return; // Dont draw if no current setting
   }
   
-//  display.fillRect(x, YPOS + 16, w, 7, WHITE);
-//  draw_clearArea(x, 16, w);
-  
   char buff[4];
   if(setting.now != SETTING_NOW_MONTH)
     sprintf_P(buff, PSTR("%1u"), setting.val);
   else
     strcpy_P(buff, months[setting.val]);
 
+  // TODO- Should I be calling the menu class to draw a string?
   dateTimeMenu.drawString(buff, true, x, YPOS + h);
 }
 
@@ -170,6 +173,9 @@ byte getMaxValForSetting()
   return max;
 }
 
+//------------------------------
+// Move the menu up on key press
+//------------------------------
 void timeDataUp()
 {
   setting.val++;
@@ -177,6 +183,9 @@ void timeDataUp()
     setting.val = 0;
 }
 
+//--------------------------------
+// Move the menu down on key press
+//--------------------------------
 void timeDataDown()
 {
   setting.val--;
@@ -185,11 +194,16 @@ void timeDataDown()
     setting.val = max;
 }
 
+//----------------------------------------------------
+// Method is called when the Middle button (select) is
+// pressed on the date menu.
+//----------------------------------------------------
 void selectDate()
 {
 #ifndef SLEEP_PROCESSOR
 Serial.println("selectDate(): Enter");
 #endif
+  // Set the up and down buttons, and drawing routine to new functions
   dateTimeMenu.setDownFunc(timeDataUp);
   dateTimeMenu.setUpFunc(timeDataDown);
   dateTimeMenu.setDrawFunc(dateDraw);
@@ -245,22 +259,29 @@ Serial.println("selectDate(): Enter");
       timeDataSet.Wday = time_dow(timeDataSet.Year + 2000, timeDataSet.Month + 1, timeDataSet.Day);
       setting.now = SETTING_NOW_NONE;
 
-      // Go back to menu mechanism of selecting the next option.
+      // Go back to menu after finishing the editing of the date.
+      // TODO - Find a nicer way to do this................
       dateTimeMenu.setDownFunc(dateTimeDownFunc);
       dateTimeMenu.setUpFunc(dateTimeUpFunc);
       dateTimeMenu.setDrawFunc(NULL);
       
       break;
   }
-  
+
+  // Display the new date
   showDateStr();
 }
 
+//----------------------------------------------------
+// Method is called when the Middle button (select) is
+// pressed on the time menu.
+//----------------------------------------------------
 void selectTime()
 {
 #ifndef SLEEP_PROCESSOR
 Serial.println("selectTime(): Enter");
 #endif
+  // Set the up and down buttons, and drawing routine to new functions
   dateTimeMenu.setDownFunc(timeDataUp);
   dateTimeMenu.setUpFunc(timeDataDown);
   dateTimeMenu.setDrawFunc(timeDraw);
@@ -300,16 +321,22 @@ Serial.println("selectTime(): Enter");
         timeDataSet.Minute = 59;
       setting.now = SETTING_NOW_NONE;
 
-      // Go back to menu selection
+      // Go back to menu after finishing the editing of the date.
+      // TODO - Find a nicer way to do this................
       dateTimeMenu.setDownFunc(dateTimeDownFunc);
       dateTimeMenu.setUpFunc(dateTimeUpFunc);
       dateTimeMenu.setDrawFunc(NULL);
       break;
   }
 
+  // Update the time display
   showTimeStr();
 }
 
+//-------------------------------------------------------------- 
+// Method draws the selection highlight when changing the time.
+// The character highlight is reversed so it can be seen
+//-------------------------------------------------------------- 
 void timeDraw()
 {
   // Get font dimensions
@@ -332,19 +359,17 @@ void timeDraw()
       break;
     default:
       x = 0;
-//      return DISPLAY_DONE;
   }
-
-//  draw_clearArea(x, 32, 5);
 
   char buff[2];
   buff[0] = setting.val + 48;
   buff[1] = 0x00;
   dateTimeMenu.drawString(buff, true, x, YPOS + ( h * 2 ));
-
-//  return DISPLAY_DONE;
 }
 
+//--------------------------------------------------------------
+// Method creates the date string to me used for the menu string
+//--------------------------------------------------------------
 void makeDateStr(char* buff)
 {
   char month[4] = {0};
@@ -352,6 +377,9 @@ void makeDateStr(char* buff)
   sprintf_P(buff, PSTR("%1s%02u %s %02u"), "", timeDataSet.Day, month, timeDataSet.Year);
 }
 
+//--------------------------------------------------------------
+// Method creates the date menu option using the date passed in.
+//--------------------------------------------------------------
 void showDateStr()
 {
   char buff[21];
@@ -359,11 +387,17 @@ void showDateStr()
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_INDEX, buff, NULL, selectDate); // Position 1
 }
 
+//--------------------------------------------------------------
+// Method creates the time string to me used for the menu string
+//--------------------------------------------------------------
 void makeTimeStr(char* buff)
 {
   sprintf_P(buff, PSTR("%1s%02u:%02u"), "", timeDataSet.Hour, timeDataSet.Minute);
 }
 
+//--------------------------------------------------------------
+// Method creates the time menu option using the date passed in.
+//--------------------------------------------------------------
 void showTimeStr()
 {
   char buff[12];
@@ -371,16 +405,28 @@ void showTimeStr()
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_INDEX, buff, NULL, selectTime); // Position 3
 }
 
+//----------------------------------------
+// Method handles down button pressed when 
+// editing the date and time strings
+//----------------------------------------
 void dateTimeDownFunc()
 {
   dateTimeMenu.upOption();
 }
 
+//----------------------------------------
+// Method handles up button pressed when 
+// editing the date and time strings
+//----------------------------------------
 void dateTimeUpFunc()
 {
   dateTimeMenu.downOption();
 }
 
+//----------------------------------------------------------------
+// Method to save the time when the Save menu option is selected.
+// Changes the menu option to "Saved".
+//----------------------------------------------------------------
 void saveTimeFunc()
 {
   MyDS3232.write(timeDataSet);

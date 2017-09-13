@@ -8,6 +8,10 @@
  #include "WProgram.h"
 #endif
 
+#define NUM_MENUS             3
+#define MENU_MAIN_INDEX       0
+#define MENU_DATE_TIME_INDEX  1
+
 #define INACTIVITY 30000
 
 extern Adafruit_SharpMem display;

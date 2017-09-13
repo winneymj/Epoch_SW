@@ -24,10 +24,6 @@ bool menuExit = false;
 
 void initializeMenu()
 {
-#define NUM_MENUS           3
-#define MENU_MAIN_INDEX     0
-#define MENU_DATE_TIME_INDEX     1
-
   menu.setTextSize(1);
   menu.setFont(&courier_10x15FontInfo);
   
@@ -38,6 +34,12 @@ void initializeMenu()
   menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Exit"), menu_exitBitmaps, exitMenu);
 }
 
+//----------------------------------------------------------------
+// Method display the main menu and enters a loop checking for key
+// presses and passing them onto the menu display code.
+// If no keys are pressed for the ACTIVITY_TIMEOUT then the loop
+// exits.
+//----------------------------------------------------------------
 void displayMenu()
 {
   // get the current time in millis
@@ -100,14 +102,11 @@ void displayMenu()
 void exitMenu()
 {
 #ifndef SLEEP_PROCESSOR
-Serial.println("exitMenu(): Enter");
+//Serial.println("exitMenu(): Enter");
 #endif
   // Clear down bottom of the screen
   display.fillRect(0, 64, 128, 128, WHITE);
 //  display.refresh();
-
-  // Exited the menu so go back to drawing the time etc.
-  drawFunc = displayTime;
 
   // Set flag to make sure we exit the while loop.
   menuExit = true;
