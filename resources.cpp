@@ -518,61 +518,114 @@ extern const uint8_t  arialNarrow_48ptBitmaps[] =
   0x00, 0x7E, 0x00, 0x00, //          ######           
 };
 
-// Character descriptors for Arial Narrow 48pt
-// { [Char width in bits], [Offset into arialNarrow_48ptCharBitmaps in bytes] }
-extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[] = 
+// { [Char width in bits], [Char height in bits], [Offset into courierNew_12ptCharBitmaps in bytes] }
+const GFXglyph arialNarrow_48ptDescriptors[] PROGMEM =
 {
-  {26, 48, 0},    // 0 
-  {26, 48, 192},    // 1 
-  {26, 48, 384},    // 2 
-  {26, 48, 576},    // 3 
-  {26, 48, 768},    // 4 
-  {26, 48, 960},    // 5 
-  {26, 48, 1152},     // 6 
-  {26, 48, 1344},     // 7 
-  {26, 48, 1536},     // 8 
-  {26, 48, 1728},     // 9 
+  {0, 32, 48, 26, 0, 0},      // 0 
+  {192, 32, 48, 26, 0, 0},    // 1 
+  {384, 32, 48, 26, 0, 0},    // 2 
+  {576, 32, 48, 26, 0, 0},    // 3 
+  {768, 32, 48, 26, 0, 0},    // 4 
+  {960, 32, 48, 26, 0, 0},    // 5 
+  {1152, 32, 48, 26, 0, 0},   // 6 
+  {1344, 32, 48, 26, 0, 0},   // 7 
+  {1536, 32, 48, 26, 0, 0},   // 8 
+  {1728, 32, 48, 26, 0, 0},   // 9 
 };
 
-extern const uint8_t calibri_48ptBitmaps_colon[] = 
+// Font information for Courier 10x15
+extern const GFXfont arialNarrow_48ptFontInfo PROGMEM =
 {
-  // @0 ':' (7 pixels wide)
-  0x7C, //  ##### 
-  0xFE, // #######
-  0xFE, // #######
-  0xFE, // #######
-  0xFE, // #######
-  0xFE, // #######
-  0x7C, //  ##### 
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x00, //        
-  0x7C, //  ##### 
-  0xFE, // #######
-  0xFE, // #######
-  0xFE, // #######
-  0xFE, // #######
-  0xFE, // #######
-  0x7C, //  ##### 
+  (uint8_t  *)arialNarrow_48ptBitmaps, //  Character bitmap array
+  (GFXglyph *)arialNarrow_48ptDescriptors, //  Character descriptor array
+  '0', //  Start character
+  '9', //  End character
+  48,  // Newline distance (y axis)
+};
+
+//// Character descriptors for Arial Narrow 48pt
+//// { [Char width in bits], [Offset into arialNarrow_48ptCharBitmaps in bytes] }
+//extern const FONT_CHAR_INFO arialNarrow_48ptDescriptors[] = 
+//{
+//  {26, 48, 0},    // 0 
+//  {26, 48, 192},    // 1 
+//  {26, 48, 384},    // 2 
+//  {26, 48, 576},    // 3 
+//  {26, 48, 768},    // 4 
+//  {26, 48, 960},    // 5 
+//  {26, 48, 1152},     // 6 
+//  {26, 48, 1344},     // 7 
+//  {26, 48, 1536},     // 8 
+//  {26, 48, 1728},     // 9 
+//};
+
+extern const uint8_t arialNarrow_48ptBitmaps_colon[] PROGMEM = 
+{
+  // @0 ':' (5 pixels wide)
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0xF8, // #####
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
+  0x00, //      
 };
 
 // Character descriptors for Calibri 48pt
 // { [Char width in bits], [Char height in bits], [Offset into calibri_48ptCharBitmaps in bytes] }
-extern const FONT_CHAR_INFO calibri_48ptDescriptors_colon[] = 
+extern const GFXglyph arialNarrow_48ptDescriptors_colon[] PROGMEM = 
 {
-  {7, 30, 0},     // : 
+  {0, 8, 48, 5, 0, 0},      // : 
+};
+
+// Font information for Courier 10x15
+extern const GFXfont arialNarrow_48ptFontInfo_colon PROGMEM =
+{
+  (uint8_t  *)arialNarrow_48ptBitmaps_colon, //  Character bitmap array
+  (GFXglyph *)arialNarrow_48ptDescriptors_colon, //  Character descriptor array
+  ':', //  Start character
+  ':', //  End character
+  48,  // Newline distance (y axis)
 };
 

@@ -24,10 +24,9 @@ bool menuExit = false;
 
 void initializeMenu()
 {
+  menu.initMenu(1);  // Create a menu system with ? menu rows
   menu.setTextSize(1);
   menu.setFont(&courier_10x15FontInfo);
-  
-  menu.initMenu(1);  // Create a menu system with ? menu rows
   
   menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
   menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
