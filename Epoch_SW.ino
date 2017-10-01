@@ -188,7 +188,7 @@ void sleepProcessor()
 void setup()
 {
   Serial.begin(9600);
-  while (!Serial); 
+//  while (!Serial); 
 
 #ifndef SLEEP_PROCESSOR
   Serial.println("setup: enter");

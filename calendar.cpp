@@ -61,9 +61,6 @@ const uint8_t dayInMonth[12] PROGMEM = {
 
 void printCenterString(char *str)
 {
-//  Serial.print("printCenterString:'");
-//  Serial.print(str);
-//  Serial.println("'");
   int16_t tempX;
   int16_t tempY;
   uint16_t w;
@@ -71,14 +68,7 @@ void printCenterString(char *str)
   // Get the string width
   display.getTextBounds(str, 0, 0, &tempX, &tempY, &w, &h);
 
-//  Serial.print("w:");
-//  Serial.println(w);
-//  Serial.print("CursorX:");
-//  Serial.println(display.getCursorX());
-
   int poX = display.getCursorX() - w / 2;
-//  Serial.print("poX:");
-//  Serial.println(poX);
   int poY = display.getCursorY();
   display.setCursor(poX, poY);
   display.print(str);
@@ -111,7 +101,6 @@ void displayDOW()
     uint8_t cellCenter = (CAL_XPOS + 1) + ((CAL_CELL_WIDTH + 1 )/ 2.0) + (CAL_CELL_WIDTH * loop);
     display.setCursor(cellCenter, CAL_YPOS + CAL_CELL_HEIGHT - 2);
     printCenterString((char *)dayOfWeek[loop]);
-//    display.print(dayOfWeek[loop]);
   }
 }
 
@@ -136,49 +125,30 @@ uint8_t getCalendarStartDate()
   int8_t lastMonDom = dom - dow; 
   uint8_t daysLastMonth = 0;
   
-//  Serial.print("lastMonDom:");
-//  Serial.println(lastMonDom);
   if (lastMonDom <= 0)
   {
     daysLastMonth = daysMonth(currTime, -1);
-//    Serial.print("daysLastMonth:");
-//    Serial.println(daysLastMonth);
   }
 
   if (daysLastMonth > 0)
   {
     lastMonDom = daysLastMonth + lastMonDom;
   }
-//  Serial.print("dow:");
-//  Serial.println(dow);
-//  Serial.print("dom:");
-//  Serial.println(dom);
-//  Serial.print("lastMonDom:");
-//  Serial.println(lastMonDom);
-//  Serial.print("Month:");
-//  Serial.println(currTime.Month);
-
   return lastMonDom;
 }
 
 void displayDates(tmElements_t currTime)
 {
   display.setTextSize(1);
-//  display.setFont(NULL);  // Default 5x7 font.
   display.setFont(&cour6pt7b);
   display.setTextColor(BLACK, WHITE);
 
   // Get the date to start printing in the top left of calendar, Last Monday.
   uint8_t startDate = getCalendarStartDate();
 
-//  Serial.print("startDate:");
-//  Serial.println(startDate);
-
   uint8_t col_index = 0;
   uint8_t daysForMonth = 0;
   uint8_t dom = currTime.Day;
-    Serial.print("dom:");
-    Serial.println(dom);
   // If dom is < 7 then possible to go back into previous month
   if (dom < 7)
   {
@@ -194,28 +164,27 @@ void displayDates(tmElements_t currTime)
     for(int column = 1; column < 8; column++)
     {
       uint8_t cellCenter = CAL_XPOS + ((CAL_CELL_WIDTH + 1 )/ 2.0) + (CAL_CELL_WIDTH * (column - 1));
-  //  Serial.print("cellCenter:");
-  //  Serial.println(cellCenter);
       uint8_t xpos = cellCenter - 1;
       uint8_t ypos = CAL_YPOS + TEXT_OFFSET_Y + (CAL_CELL_HEIGHT * (row + 1)) - 3;
       display.setCursor(xpos, ypos);
       char weekStr[3] = {0};
       sprintf_P(weekStr, PSTR("%u"), startDate);
 
-      // Invert
-      if (startDate == dom)
+      // Invert color when today is current date
+      if (dom == startDate)
       {
+        int16_t x1 = CAL_XPOS + (CAL_CELL_WIDTH * (column - 1));
+        int16_t y1 = CAL_YPOS + (CAL_CELL_HEIGHT * row);
+        display.fillRect(x1, y1, CAL_CELL_WIDTH, CAL_CELL_HEIGHT, BLACK);
         display.setTextColor(WHITE, BLACK);
       }
-      
+      // Output the date
       printCenterString(weekStr);
 
-      // Invert back
-      if (startDate == dom)
+      if (dom == startDate)
       {
         display.setTextColor(BLACK, WHITE);
       }
-  
       startDate++;
       // Check if greater then end of month date and set to 1
       if (startDate > daysForMonth)
