@@ -26,6 +26,8 @@ extern void displayMenu();
 extern void initializeMenu();
 extern WatchMenu menu;
 extern void displayTime();
+extern void displayCalendar();
+
 
 Adafruit_SharpMem display(SCK, MOSI, SS);
 WatchMenu *currentMenu = &menu;
@@ -228,15 +230,24 @@ bool updateDisplay()
   // get the time and display it.
   if (rtcFired)
   {
+    // Clear the display buffer before writing to the display.
+    // Don't need to clear the display as the refresh will
+    // write it all.
+    display.clearDisplayBuffer();
+
     rtcFired = false;
     displayTime();
-    // Clear the alarm interrupt
+
+    displayCalendar();
+// Clear the alarm interrupt
 #ifdef EVERY_SECOND
     MyDS3232.alarm(ALARM_1);
 #endif
 #ifdef EVERY_MINUTE
     MyDS3232.alarm(ALARM_2);
 #endif
+
+    display.refresh();
   }
     
   // See if middle button fired and woke up the processor.

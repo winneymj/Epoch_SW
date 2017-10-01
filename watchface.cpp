@@ -29,29 +29,12 @@ extern DS3232RTC MyDS3232;
 
 
 
-//int displayChar(uint8_t x, uint8_t y, uint8_t c)
-//{
-//  FONT_CHAR_INFO fDetails = arialNarrow_48ptDescriptors[c];
-//
-//  const byte* bitmap = &arialNarrow_48ptBitmaps[fDetails.offset];
-//  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
-//  return fDetails.w + 2;
-//}
-//int displayColon(uint8_t x, uint8_t y)
-//{
-//  FONT_CHAR_INFO fDetails = calibri_48ptDescriptors_colon[0];
-//
-//  const byte* bitmap = &calibri_48ptBitmaps_colon[fDetails.offset];
-//  display.drawBitmap(x, y, bitmap, fDetails.w, fDetails.h, BLACK);
-//  return fDetails.w + 2;
-//}
-
 void displayTime(tmElements_t currTime)
 {
-  // Clear the display buffer before writing to the display.
-  // Don't need to clear the display as the refresh will
-  // write it all.
-  display.clearDisplayBuffer();
+//  // Clear the display buffer before writing to the display.
+//  // Don't need to clear the display as the refresh will
+//  // write it all.
+//  display.clearDisplayBuffer();
 
   display.setTextSize(1);
   display.setFont(&arialNarrow_48ptFontInfo);
@@ -71,7 +54,7 @@ void displayTime(tmElements_t currTime)
   display.print(timeBuff);
 
   // Display the time.  Writes the entire buffer to the display
-  display.refresh();
+//  display.refresh();
 }
 
 void displayTime()

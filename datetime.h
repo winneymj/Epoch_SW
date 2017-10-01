@@ -45,14 +45,21 @@ const char months[12][4] PROGMEM = {
   "Dec"
 };
 
+inline byte time_dow(int y, byte m, byte d)
+{
+  static byte t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+  y -= m < 3;
+  byte dow = (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
+
+  // 0 = Sunday, 1 = Monday, but Monday should be 0
+  dow--;
+  if(dow == 255) // Overflowed, must have been 0 which is Sunday
+    dow = 6;
+  return dow;
+}
+
 // leap year calulator expects year argument as years offset from 1970
 #define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
-
-extern Adafruit_SharpMem display;
-extern WatchMenu *currentMenu;
-extern DS3232RTC MyDS3232;
-extern const GFXfont courier_10x15FontInfo;
-extern WatchMenu menu;
 
 // Forward declarations
 void dateTimeDownFunc();

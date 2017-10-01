@@ -11,24 +11,17 @@
 #include "resources.h"
 #include "datetime.h"
 
+extern Adafruit_SharpMem display;
+extern WatchMenu *currentMenu;
+extern DS3232RTC MyDS3232;
+extern const GFXfont courier_10x15FontInfo;
+extern WatchMenu menu;
+
 s_menuNowSetting setting;
 WatchMenu dateTimeMenu(display);
 tmElements_t timeDataSet = {0};
 
 #define YPOS    64
-
-byte time_dow(int y, byte m, byte d)
-{
-  static byte t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
-  y -= m < 3;
-  byte dow = (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
-
-  // 0 = Sunday, 1 = Monday, but Monday should be 0
-  dow--;
-  if(dow == 255) // Overflowed, must have been 0 which is Sunday
-    dow = 6;
-  return dow;
-}
 
 //------------------------------------------------------------
 // Method is called when the date/time menu option is selected.
