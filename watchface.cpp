@@ -17,44 +17,53 @@
 #include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
-#include "icons.h"
-#include "resources.h"
+#include "arialn30pt7b.h"
+#include "courbd6pt7b.h"
 
-// Font data for Arial 48pt
+const char months[12][10] PROGMEM = {
+  "Jan",
+  "Feb",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+};
 
-extern const GFXfont arialNarrow_48ptFontInfo;
-extern const GFXfont arialNarrow_48ptFontInfo_colon;
+
 extern Adafruit_SharpMem display;
 extern DS3232RTC MyDS3232;
+extern void printCenterString(char *str);
 
+void displayLongDate(tmElements_t currTime)
+{
+  display.setTextSize(1);
+  display.setFont(&courbd6pt7b);
+  display.setTextColor(BLACK, WHITE);
 
+  char timeBuff[32] = {0};
+  sprintf_P(timeBuff, PSTR("%s %u, %u"), months[currTime.Month], currTime.Day, currTime.Year + 2000);
+
+  display.setCursor(64, 60);
+  printCenterString(timeBuff);
+}
 
 void displayTime(tmElements_t currTime)
 {
-//  // Clear the display buffer before writing to the display.
-//  // Don't need to clear the display as the refresh will
-//  // write it all.
-//  display.clearDisplayBuffer();
-
   display.setTextSize(1);
-  display.setFont(&arialNarrow_48ptFontInfo);
+  display.setFont(&arialn30pt7b);
   display.setTextColor(BLACK, WHITE);
-
   
-  char timeBuff[3] = {0};
-  sprintf_P(timeBuff, PSTR("%02u"), currTime.Hour);
+  char timeBuff[6] = {0};
+  sprintf_P(timeBuff, PSTR("%02u:%02u"), currTime.Hour, currTime.Second);
 
-  int xpos = 4;
-  display.setCursor(xpos, 10);
+  display.setCursor(4, 48);
   display.print(timeBuff);
-  display.setFont(&arialNarrow_48ptFontInfo_colon);
-  display.print(':');
-  display.setFont(&arialNarrow_48ptFontInfo);
-  sprintf_P(timeBuff, PSTR("%02u"), currTime.Second);
-  display.print(timeBuff);
-
-  // Display the time.  Writes the entire buffer to the display
-//  display.refresh();
 }
 
 void displayTime()
@@ -64,5 +73,6 @@ void displayTime()
     MyDS3232.read(currTime);
 
     displayTime(currTime);
+    displayLongDate(currTime);
 }
 

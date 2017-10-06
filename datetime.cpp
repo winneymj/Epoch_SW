@@ -8,7 +8,6 @@
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
 #include "icons.h"
-#include "resources.h"
 #include "datetime.h"
 
 extern Adafruit_SharpMem display;
