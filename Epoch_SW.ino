@@ -7,20 +7,12 @@
 #include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
+#include "defs.h"
+
 #define SCK 19
 #define MOSI 18
 #define SS 23
 #define EXTMODE 28
-
-#define LED 6
-#define MBUT 4
-#define UBUT 14
-#define DBUT 22
-#define RTC_INT 9
-
-#define EVERY_SECOND
-//#define EVERY_MINUTE
-//#define SLEEP_PROCESSOR
 
 extern void displayMenu();
 extern void initializeMenu();
@@ -42,6 +34,7 @@ volatile boolean rtcFired = false; //variables in ISR need to be volatile
 volatile uint8_t pinValM = false;
 volatile uint8_t pinValD = false;
 volatile uint8_t pinValU = false;
+volatile long keyPressTimeStamp;
 
 void enableInterrupts()
 {
@@ -92,6 +85,7 @@ void buttonISR_U() //ISR for Up button presses
   buttonRead = !buttonRead;
   buttonFired = true;
   enableInterrupts();
+  keyPressTimeStamp = millis();
 }
 
 void buttonISR_D() //ISR for Down button presses
@@ -230,12 +224,13 @@ bool updateDisplay()
   // get the time and display it.
   if (rtcFired)
   {
+    rtcFired = false;
+
     // Clear the display buffer before writing to the display.
     // Don't need to clear the display as the refresh will
     // write it all.
     display.clearDisplayBuffer();
 
-    rtcFired = false;
     displayTime();
 
     displayCalendar();
@@ -266,14 +261,20 @@ bool updateDisplay()
 
     // Display the menu on button press
     displayMenu();
+
+    // Back from the menu so redisplay the watch face
+    rtcFired = true;
+    updateDisplay();
   }    
 }
 
 void loop(void) 
 {
   // Display something before we sleep..just the first time
+  rtcFired = true;
   updateDisplay();
   digitalWrite(EXTMODE, HIGH); // switch VCOM to external
+  
 
   while (true)
   {

@@ -13,10 +13,13 @@
 #include <Adafruit_SharpMem.h>
 #include <Watch_Menu.h>
 
+#include "defs.h"
 #include "icons.h"
 #include "menu.h"
+#include "courbd6pt7b.h"
 
-// Font data for Arial 48pt
+// Externals
+extern long keyPressTimeStamp;
 
 // Locals
 WatchMenu menu(display);
@@ -49,40 +52,66 @@ void displayMenu()
     delay(10);
     rtcRead = !rtcRead;
 
+    // Clear bottom of screen
     display.fillRect(0, 64, 128, 128, WHITE);
     bool animating = currentMenu->updateMenu();
     display.refresh();
 
     while (animating)
     {
-//        display.clearDisplayBuffer();
+      // Clear bottom of screen
       display.fillRect(0, 64, 128, 128, WHITE);
       animating = currentMenu->updateMenu();
       display.refresh();
       delay(20);
     }
-//#ifndef SLEEP_PROCESSOR
-//  Serial.println("looping");
-//#endif
  
     if (pinValM)
     {
-      pinValM = false;
-      pressStart = millis();    // Reset the idle as we had a keypress
-      currentMenu->selectOption(); 
+      int8_t buttonState = digitalRead(MBUT);
+      // Button still pressed.
+      if (buttonState)
+      {
+        pinValM = false;
+        pressStart = millis();    // Reset the idle as we had a keypress
+        currentMenu->selectOption(); 
+      }
     }
+
     if (pinValD)
     {
-      pinValD = false;
-      pressStart = millis();    // Reset the idle as we had a keypress
-      currentMenu->menuDown();
+      int8_t buttonState = digitalRead(DBUT);
+      // Button still pressed.
+      if (buttonState)
+      {
+        pinValD = false;
+        pressStart = millis();    // Reset the idle as we had a keypress
+        currentMenu->menuDown();
+      }
     }
       
     if (pinValU)
     {
-      pinValU = false;
-      pressStart = millis();  // Reset the idle as we had a keypress
-      currentMenu->menuUp();
+      int8_t buttonState = digitalRead(UBUT);
+      // Button still pressed.
+      if (buttonState)
+      {
+        pinValU = false;
+        pressStart = millis();  // Reset the idle as we had a keypress
+  
+  //  int delta = pressStart - keyPressTimeStamp;
+    
+  //  display.fillRect(0, 0, 128, 10, WHITE);
+  //  display.setTextSize(1);
+  //  display.setFont(&courbd6pt7b);
+  //  display.setTextColor(BLACK, WHITE);
+  //  display.setCursor(10, 8);
+  //  display.print(delta);
+  //  display.refresh();
+  
+        
+        currentMenu->menuUp();
+      }
     }
 
     // See if inactive and get out.
@@ -106,6 +135,14 @@ void exitMenu()
   // Clear down bottom of the screen
   display.fillRect(0, 64, 128, 128, WHITE);
 //  display.refresh();
+
+//  display.setTextSize(1);
+//  display.setFont(&courbd6pt7b);
+//  display.setTextColor(BLACK, WHITE);
+//  display.setCursor(10, 8);
+//  display.print("exitMenu");
+//  display.refresh();
+
 
   // Set flag to make sure we exit the while loop.
   menuExit = true;

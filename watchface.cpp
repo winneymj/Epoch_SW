@@ -17,12 +17,13 @@
 #include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
-#include "arialn30pt7b.h"
+#include "defs.h"
+#include "arialn28pt7b.h"
 #include "courbd6pt7b.h"
 
 const char months[12][10] PROGMEM = {
-  "Jan",
-  "Feb",
+  "January",
+  "February",
   "March",
   "April",
   "May",
@@ -56,11 +57,16 @@ void displayLongDate(tmElements_t currTime)
 void displayTime(tmElements_t currTime)
 {
   display.setTextSize(1);
-  display.setFont(&arialn30pt7b);
+  display.setFont(&arialn28pt7b);
   display.setTextColor(BLACK, WHITE);
   
   char timeBuff[6] = {0};
+#ifdef EVERY_SECOND
   sprintf_P(timeBuff, PSTR("%02u:%02u"), currTime.Hour, currTime.Second);
+#endif
+#ifdef EVERY_MINUTE
+  sprintf_P(timeBuff, PSTR("%02u:%02u"), currTime.Hour, currTime.Minute);
+#endif
 
   display.setCursor(4, 48);
   display.print(timeBuff);
