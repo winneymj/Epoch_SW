@@ -16,7 +16,7 @@
 #include "defs.h"
 #include "icons.h"
 #include "menu.h"
-#include "courbd6pt7b.h"
+#include "cour6pt7b.h"
 
 // Externals
 extern long keyPressTimeStamp;
@@ -29,7 +29,7 @@ void initializeMenu()
 {
   menu.initMenu(1);  // Create a menu system with ? menu rows
   menu.setTextSize(1);
-  menu.setFont(&courier_10x15FontInfo);
+  menu.setFont(&cour6pt7b);
   
   menu.createMenu(MENU_MAIN_INDEX, 2, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
   menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
@@ -98,18 +98,6 @@ void displayMenu()
       {
         pinValU = false;
         pressStart = millis();  // Reset the idle as we had a keypress
-  
-  //  int delta = pressStart - keyPressTimeStamp;
-    
-  //  display.fillRect(0, 0, 128, 10, WHITE);
-  //  display.setTextSize(1);
-  //  display.setFont(&courbd6pt7b);
-  //  display.setTextColor(BLACK, WHITE);
-  //  display.setCursor(10, 8);
-  //  display.print(delta);
-  //  display.refresh();
-  
-        
         currentMenu->menuUp();
       }
     }
@@ -134,15 +122,6 @@ void exitMenu()
 #endif
   // Clear down bottom of the screen
   display.fillRect(0, 64, 128, 128, WHITE);
-//  display.refresh();
-
-//  display.setTextSize(1);
-//  display.setFont(&courbd6pt7b);
-//  display.setTextColor(BLACK, WHITE);
-//  display.setCursor(10, 8);
-//  display.print("exitMenu");
-//  display.refresh();
-
 
   // Set flag to make sure we exit the while loop.
   menuExit = true;

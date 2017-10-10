@@ -27,14 +27,11 @@ pFunc drawFunc = displayTime;
 DS3232RTC MyDS3232;
 RTCx MCP7941;
 
-volatile boolean buttonRead = false; //variables in ISR need to be volatile
-volatile boolean buttonFired = false; //variables in ISR need to be volatile
 volatile boolean rtcRead = false; //variables in ISR need to be volatile
 volatile boolean rtcFired = false; //variables in ISR need to be volatile
 volatile uint8_t pinValM = false;
 volatile uint8_t pinValD = false;
 volatile uint8_t pinValU = false;
-volatile long keyPressTimeStamp;
 
 void enableInterrupts()
 {
@@ -67,9 +64,6 @@ void buttonISR_M() //ISR for Middle button presses
   // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.\
   
   pinValM = true;
-
-  buttonRead = !buttonRead;
-  buttonFired = true;
   enableInterrupts();
 }
 
@@ -81,11 +75,7 @@ void buttonISR_U() //ISR for Up button presses
   // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.\
   
   pinValU = true;
-
-  buttonRead = !buttonRead;
-  buttonFired = true;
   enableInterrupts();
-  keyPressTimeStamp = millis();
 }
 
 void buttonISR_D() //ISR for Down button presses
@@ -96,9 +86,6 @@ void buttonISR_D() //ISR for Down button presses
   // are disabled. Other triggers (FALLING, RISING etc) need the clock running to be triggered.\
   
   pinValD = true;
-
-  buttonRead = !buttonRead;
-  buttonFired = true;
   enableInterrupts();
 }
 
@@ -200,9 +187,7 @@ void setup()
   initializeRTC();
   
   display.clearDisplay();
-  Serial.println("setup: clearDisplay");
   display.refresh();
-  Serial.println("setup: refresh");
 
   display.setTextColor(BLACK);
   display.setTextSize(1);
@@ -246,14 +231,8 @@ bool updateDisplay()
   }
     
   // See if middle button fired and woke up the processor.
-  if (buttonFired && pinValM)
+  if (pinValM)
   {
-#ifndef SLEEP_PROCESSOR
-  Serial.print("buttonFired=");
-  Serial.println(buttonFired);
-#endif
-    buttonFired = false;
-
     // Clear which button was pressed.
     pinValM = false;
     pinValU = false;
@@ -273,11 +252,13 @@ void loop(void)
   // Display something before we sleep..just the first time
   rtcFired = true;
   updateDisplay();
-  digitalWrite(EXTMODE, HIGH); // switch VCOM to external
-  
 
   while (true)
   {
+    // Before we sleep set the VCOM to external, the 1Hz VCOM signal
+    digitalWrite(EXTMODE, HIGH); // switch VCOM to external
+  
+
 #ifdef SLEEP_PROCESSOR
   // Sleep and wait for interrupt from buttons or RTC
   sleepProcessor();
@@ -289,8 +270,6 @@ void loop(void)
     digitalWrite(EXTMODE, LOW); // switch VCOM to software.
 
     updateDisplay();
-
-    digitalWrite(EXTMODE, HIGH); // switch VCOM to external for sleep
   }
 
 //  digitalWrite(LED, rtcRead ? HIGH : LOW);

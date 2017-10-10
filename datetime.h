@@ -21,8 +21,10 @@
 #define SETTING_NOW_YEAR10 8
 #define SETTING_NOW_YEAR1 9
 
-#define OPTION_DATE_INDEX 1
-#define OPTION_TIME_INDEX 2
+#define OPTION_DATE_INDEX 0
+#define OPTION_TIME_INDEX 1
+#define OPTION_SAVE_INDEX 2
+#define OPTION_EXIT_INDEX 3
 
 
 typedef struct{
@@ -65,7 +67,9 @@ inline byte time_dow(int y, byte m, byte d)
 void dateTimeDownFunc();
 void dateTimeUpFunc();
 void showDateStr();
+void showDateStr(int16_t invert_start, int16_t invert_length);
 void showTimeStr();
+void showTimeStr(int16_t invert_start, int16_t invert_length);
 void saveTimeFunc();
 void timeDraw();
 void back();

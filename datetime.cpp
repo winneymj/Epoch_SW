@@ -9,11 +9,11 @@
 
 #include "icons.h"
 #include "datetime.h"
+#include "cour8pt7b.h"
 
 extern Adafruit_SharpMem display;
 extern WatchMenu *currentMenu;
 extern DS3232RTC MyDS3232;
-extern const GFXfont courier_10x15FontInfo;
 extern WatchMenu menu;
 
 s_menuNowSetting setting;
@@ -46,10 +46,10 @@ Serial.println(timeDataSet.Year, DEC);
   
   dateTimeMenu.initMenu(1);  // Create a menu system with ? menu rows
   dateTimeMenu.setTextSize(1);
-  dateTimeMenu.setFont(&courier_10x15FontInfo);
-  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 5, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, 3, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, 4, PSTR("Exit"), NULL, back); // Position 4
+  dateTimeMenu.setFont(&cour8pt7b);
+  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 4, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_EXIT_INDEX, PSTR("Exit"), NULL, back); // Position 4
 
   showDateStr();
   showTimeStr();
@@ -85,45 +85,53 @@ void dateDraw()
 #ifndef SLEEP_PROCESSOR
 //Serial.println("dateDraw(): Enter");
 #endif
-  // Get font dimensions
-  uint8_t w = dateTimeMenu.fontWidth(),
-          h = dateTimeMenu.fontHeight();
-  
-  byte x;
+  int16_t invert_start = -1;
+  int16_t invert_length = 0;
 
-#ifndef SLEEP_PROCESSOR
-//Serial.print("dateDraw(): setting.now:");
-//Serial.println(setting.now);
-#endif
   switch(setting.now)
   {
     case SETTING_NOW_DAY10:
-    x = 2 * w;
-    break;
-  case SETTING_NOW_DAY1:
-    x = 3 * w;
-    break;
-  case SETTING_NOW_MONTH:
-    x = 5 * w;
-    break;
-  case SETTING_NOW_YEAR10:
-    x = 9 * w;
-    break;
-  case SETTING_NOW_YEAR1:
-    x = 10 * w;
-    break;
-  default:
-    return; // Dont draw if no current setting
+      invert_start = 1;
+      invert_length = 1;
+      timeDataSet.Day = (setting.val * 10) + (timeDataSet.Day % 10);
+Serial.print("timeDataSet.Day=");
+Serial.println(timeDataSet.Day);
+#ifndef SLEEP_PROCESSOR
+//Serial.print("dateDraw(): setting.val=");
+//Serial.println(setting.val);
+//Serial.print("dateDraw(): timeDataSet.Day=");
+//Serial.println(timeDataSet.Day);
+#endif
+      break;
+    case SETTING_NOW_DAY1:
+      invert_start = 2;
+      invert_length = 1;
+      timeDataSet.Day = ((timeDataSet.Day / 10) * 10) + setting.val;
+Serial.print("timeDataSet.Day=");
+Serial.println(timeDataSet.Day);
+      break;
+    case SETTING_NOW_MONTH:
+      invert_start = 4;
+      invert_length = 3;
+      timeDataSet.Month = setting.val;
+      break;
+    case SETTING_NOW_YEAR10:
+      invert_start = 8;
+      invert_length = 1;
+      timeDataSet.Year = (setting.val * 10) + timeDataSet.Year % 10;
+      break;
+    case SETTING_NOW_YEAR1:
+      invert_start = 9;
+      invert_length = 1;
+      timeDataSet.Year = ((timeDataSet.Year / 10) * 10) + setting.val;
+      break;
+    default:
+      // Remove inversion
+      invert_start = -1;
+      invert_length = 0;
   }
   
-  char buff[4];
-  if(setting.now != SETTING_NOW_MONTH)
-    sprintf_P(buff, PSTR("%1u"), setting.val);
-  else
-    strcpy_P(buff, months[setting.val]);
-
-  // TODO- Should I be calling the menu class to draw a string?
-  dateTimeMenu.drawString(buff, true, x, YPOS + h);
+  showDateStr(invert_start, invert_length);
 }
 
 byte getMaxValForSetting()
@@ -331,32 +339,34 @@ Serial.println("selectTime(): Enter");
 //-------------------------------------------------------------- 
 void timeDraw()
 {
-  // Get font dimensions
-  uint8_t w = dateTimeMenu.fontWidth(),
-          h = dateTimeMenu.fontHeight();
-  byte x;
+  int16_t invert_start = -1;
+  int16_t invert_length = 0;
+
   switch(setting.now)
   {
     case SETTING_NOW_10HOUR:
-      x = 2 * w;
+      invert_start = 1;
+      invert_length = 1;
+      timeDataSet.Hour = (setting.val * 10) + timeDataSet.Hour % 10;
       break;
     case SETTING_NOW_1HOUR:
-      x = 3 * w;
+      invert_start = 2;
+      invert_length = 1;
+      timeDataSet.Hour = ((timeDataSet.Hour / 10) * 10) + setting.val;
       break;
     case SETTING_NOW_10MIN:
-      x = 5 * w;
+      invert_start = 4;
+      invert_length = 1;
+      timeDataSet.Minute = (setting.val * 10) + timeDataSet.Minute % 10;
       break;
     case SETTING_NOW_1MIN:
-      x = 6 * w;
+      invert_start = 5;
+      invert_length = 1;
+      timeDataSet.Minute = ((timeDataSet.Minute / 10) * 10) + setting.val;
       break;
-    default:
-      x = 0;
   }
 
-  char buff[2];
-  buff[0] = setting.val + 48;
-  buff[1] = 0x00;
-  dateTimeMenu.drawString(buff, true, x, YPOS + ( h * 2 ));
+  showTimeStr(invert_start, invert_length);
 }
 
 //--------------------------------------------------------------
@@ -369,14 +379,19 @@ void makeDateStr(char* buff)
   sprintf_P(buff, PSTR("%1s%02u %s %02u"), "", timeDataSet.Day, month, timeDataSet.Year);
 }
 
+void showDateStr()
+{
+  showDateStr(-1, 0); // No invert
+}
+
 //--------------------------------------------------------------
 // Method creates the date menu option using the date passed in.
 //--------------------------------------------------------------
-void showDateStr()
+void showDateStr(int16_t invert_start, int16_t invert_length)
 {
   char buff[21];
   makeDateStr(buff);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_INDEX, buff, NULL, selectDate); // Position 1
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_INDEX, invert_start, invert_length, buff, NULL, selectDate); // Position 1
 }
 
 //--------------------------------------------------------------
@@ -387,14 +402,19 @@ void makeTimeStr(char* buff)
   sprintf_P(buff, PSTR("%1s%02u:%02u"), "", timeDataSet.Hour, timeDataSet.Minute);
 }
 
+void showTimeStr()
+{
+  showTimeStr(-1, 0);  
+}
+
 //--------------------------------------------------------------
 // Method creates the time menu option using the date passed in.
 //--------------------------------------------------------------
-void showTimeStr()
+void showTimeStr(int16_t invert_start, int16_t invert_length)
 {
   char buff[12];
   makeTimeStr(buff);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_INDEX, buff, NULL, selectTime); // Position 3
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_INDEX, invert_start, invert_length, buff, NULL, selectTime); // Position 2
 }
 
 //----------------------------------------
@@ -424,7 +444,7 @@ void saveTimeFunc()
   MyDS3232.write(timeDataSet);
 
   // Change the option text to Saved
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, 3, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 
 }
 
 
