@@ -21,22 +21,6 @@
 #include "arialn28pt7b.h"
 #include "courbd6pt7b.h"
 
-const char months[12][10] PROGMEM = {
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-};
-
-
 extern Adafruit_SharpMem display;
 extern DS3232RTC MyDS3232;
 extern void printCenterString(char *str);

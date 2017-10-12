@@ -11,11 +11,11 @@
   #define WIRE_WRITE Wire.send
 #endif
 
-#define NUM_MENUS           3
-#define MENU_MAIN_INDEX     0
-#define MENU_SUB_INDEX      1
-#define MENU_SUB_SUB_INDEX  2
-#define MENU_CHANNELS_INDEX 3
+//#define NUM_MENUS           3
+//#define MENU_MAIN_INDEX     0
+//#define MENU_SUB_INDEX      1
+//#define MENU_SUB_SUB_INDEX  2
+//#define MENU_CHANNELS_INDEX 3
 
 
 //

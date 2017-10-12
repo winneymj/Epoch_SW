@@ -7,9 +7,10 @@
 #include <DS3232RTC.h>    // http://github.com/JChristensen/DS3232RTC
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
-#include "icons.h"
+#include "defs.h"
+//#include "icons.h"
 #include "datetime.h"
-#include "cour8pt7b.h"
+#include "courbd6pt7b.h"
 
 extern Adafruit_SharpMem display;
 extern WatchMenu *currentMenu;
@@ -19,8 +20,8 @@ extern WatchMenu menu;
 s_menuNowSetting setting;
 WatchMenu dateTimeMenu(display);
 tmElements_t timeDataSet = {0};
-
-#define YPOS    64
+eHR1224 hr1224;
+eAMPM amPm;
 
 //------------------------------------------------------------
 // Method is called when the date/time menu option is selected.
@@ -28,31 +29,28 @@ tmElements_t timeDataSet = {0};
 //------------------------------------------------------------
 void timeFunc()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("timeFunc(): Enter");
-#endif
+//#ifndef SLEEP_PROCESSOR
+//Serial.println("timeFunc(): Enter");
+//#endif
 
   tmElements_t currTime;
   MyDS3232.read(currTime);
 
   // Create copy of current time & date
   memcpy(&timeDataSet, &currTime, sizeof(tmElements_t));
+  hr1224 = (MyDS3232.readRTC(RTC_HOURS) & _BV(HR1224)) ? HR12 : HR24; // Hr
+  amPm = (MyDS3232.readRTC(RTC_HOURS) & _BV(AMPM)) ? HRPM : HRAM; // Morning/Afternoon
 
-#ifndef SLEEP_PROCESSOR
-Serial.print("timeFunc(): timeDataSet.Year=");
-Serial.println(timeDataSet.Year, DEC);
-#endif
-
-  
   dateTimeMenu.initMenu(1);  // Create a menu system with ? menu rows
   dateTimeMenu.setTextSize(1);
-  dateTimeMenu.setFont(&cour8pt7b);
-  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 4, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
+  dateTimeMenu.setFont(&courbd6pt7b);
+  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 5, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_EXIT_INDEX, PSTR("Exit"), NULL, back); // Position 4
 
   showDateStr();
   showTimeStr();
+  show1224HrStr();
 
   // Default to date selected
   dateTimeMenu.selectedOption(MENU_MAIN_INDEX, OPTION_DATE_INDEX); // Set the default selection to the date
@@ -62,16 +60,16 @@ Serial.println(timeDataSet.Year, DEC);
 
   display.fillRect(0, 64, 128, 128, WHITE); // Clear display
 
-#ifndef SLEEP_PROCESSOR
-Serial.println("timeFunc(): Exit");
-#endif
+//#ifndef SLEEP_PROCESSOR
+//Serial.println("timeFunc(): Exit");
+//#endif
 }
 
 void back()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("back()");
-#endif
+//#ifndef SLEEP_PROCESSOR
+//Serial.println("back()");
+//#endif
   // Point to top level menu
   currentMenu = &menu;
 }
@@ -94,21 +92,11 @@ void dateDraw()
       invert_start = 1;
       invert_length = 1;
       timeDataSet.Day = (setting.val * 10) + (timeDataSet.Day % 10);
-Serial.print("timeDataSet.Day=");
-Serial.println(timeDataSet.Day);
-#ifndef SLEEP_PROCESSOR
-//Serial.print("dateDraw(): setting.val=");
-//Serial.println(setting.val);
-//Serial.print("dateDraw(): timeDataSet.Day=");
-//Serial.println(timeDataSet.Day);
-#endif
       break;
     case SETTING_NOW_DAY1:
       invert_start = 2;
       invert_length = 1;
       timeDataSet.Day = ((timeDataSet.Day / 10) * 10) + setting.val;
-Serial.print("timeDataSet.Day=");
-Serial.println(timeDataSet.Day);
       break;
     case SETTING_NOW_MONTH:
       invert_start = 4;
@@ -140,10 +128,10 @@ byte getMaxValForSetting()
   switch(setting.now)
   {
     case SETTING_NOW_10HOUR:
-      max = 2;
+      max = (hr1224 ==  HR12) ? 1 : 2;
       break;
     case SETTING_NOW_1HOUR:
-      max = 9;
+      max = (hr1224 ==  HR12) ? 2 : 9;
       break;
     case SETTING_NOW_10MIN:
       max = 5;
@@ -165,6 +153,10 @@ byte getMaxValForSetting()
       break;
     case SETTING_NOW_YEAR1:
       max = 9;
+      break;
+    case SETTING_NOW_12HR:
+    case SETTING_NOW_24HR:
+      max = 1;
       break;
     default:
       max = 9;
@@ -200,9 +192,6 @@ void timeDataDown()
 //----------------------------------------------------
 void selectDate()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("selectDate(): Enter");
-#endif
   // Set the up and down buttons, and drawing routine to new functions
   dateTimeMenu.setDownFunc(timeDataUp);
   dateTimeMenu.setUpFunc(timeDataDown);
@@ -272,15 +261,50 @@ Serial.println("selectDate(): Enter");
   showDateStr();
 }
 
+void select1224hr()
+{
+  // Set the up and down buttons, and drawing routine to new functions
+  dateTimeMenu.setDownFunc(timeDataUp);
+  dateTimeMenu.setUpFunc(timeDataDown);
+  dateTimeMenu.setDrawFunc(hr1224Draw);
+
+  switch(setting.now)
+  {
+    case SETTING_NOW_NONE:
+    {
+      setting.val = hr1224;
+      setting.now = SETTING_NOW_24HR;
+      break;
+    }
+    default:
+      hr1224 = (eHR1224)setting.val;
+      setting.now = SETTING_NOW_NONE;
+
+      // Go back to menu after finishing the editing of the date.
+      // TODO - Find a nicer way to do this................
+      dateTimeMenu.setDownFunc(dateTimeDownFunc);
+      dateTimeMenu.setUpFunc(dateTimeUpFunc);
+      dateTimeMenu.setDrawFunc(NULL);
+      break;
+  }
+
+  // Update the time mode
+  show1224HrStr();
+}
+
+void hr1224Draw()
+{
+  hr1224 = (eHR1224)setting.val;
+  
+  show1224HrStr(1, 2);
+}
+
 //----------------------------------------------------
 // Method is called when the Middle button (select) is
 // pressed on the time menu.
 //----------------------------------------------------
 void selectTime()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("selectTime(): Enter");
-#endif
   // Set the up and down buttons, and drawing routine to new functions
   dateTimeMenu.setDownFunc(timeDataUp);
   dateTimeMenu.setUpFunc(timeDataDown);
@@ -375,7 +399,7 @@ void timeDraw()
 void makeDateStr(char* buff)
 {
   char month[4] = {0};
-  strcpy_P(month, months[timeDataSet.Month]);
+  strcpy_P(month, shortMonths[timeDataSet.Month]);
   sprintf_P(buff, PSTR("%1s%02u %s %02u"), "", timeDataSet.Day, month, timeDataSet.Year);
 }
 
@@ -399,7 +423,15 @@ void showDateStr(int16_t invert_start, int16_t invert_length)
 //--------------------------------------------------------------
 void makeTimeStr(char* buff)
 {
-  sprintf_P(buff, PSTR("%1s%02u:%02u"), "", timeDataSet.Hour, timeDataSet.Minute);
+  switch(hr1224)
+  {
+    case HR12:
+      sprintf_P(buff, PSTR("%1s%02u:%02u %2s"), "", timeDataSet.Hour, timeDataSet.Minute, (amPm == HRAM) ? "AM" : "PM");
+    break;
+    case HR24:
+      sprintf_P(buff, PSTR("%1s%02u:%02u %2s"), "", timeDataSet.Hour, timeDataSet.Minute, "");
+      break;
+  }
 }
 
 void showTimeStr()
@@ -415,6 +447,33 @@ void showTimeStr(int16_t invert_start, int16_t invert_length)
   char buff[12];
   makeTimeStr(buff);
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_INDEX, invert_start, invert_length, buff, NULL, selectTime); // Position 2
+}
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+void show1224HrStr()
+{
+  show1224HrStr(-1, 0);  
+}
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+void show1224HrStr(int16_t invert_start, int16_t invert_length)
+{
+  char buff[7] = {0};
+  switch(hr1224)
+  {
+    case HR12:
+      strcpy_P(buff, PSTR(" 12 hr"));
+    break;
+    case HR24:
+      strcpy_P(buff, PSTR(" 24 hr"));
+      break;
+  }
+  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_12HR_INDEX, invert_start, invert_length, buff, NULL, select1224hr);
+
+  // Redraw the time string also, as we may have changed the 12/24 hr option.
+  showTimeStr();
 }
 
 //----------------------------------------
@@ -441,7 +500,21 @@ void dateTimeUpFunc()
 //----------------------------------------------------------------
 void saveTimeFunc()
 {
+  // Write the time.
   MyDS3232.write(timeDataSet);
+  // Set the 12/24 hr option.  This is bit 6 of the Hr (0x02), 0=24hr, 1=12hr.
+  byte hrRead = MyDS3232.readRTC(RTC_HOURS); // Hr
+
+  // Set 12 or 24 hr
+  switch(hr1224)
+  {
+    case HR12:
+      MyDS3232.writeRTC(RTC_HOURS, hrRead | _BV(HR1224)); // Set bit 6
+    break;
+    case HR24:
+      MyDS3232.writeRTC(RTC_HOURS, hrRead & ~_BV(HR1224)); // Clear bit 6
+    break;
+  }
 
   // Change the option text to Saved
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 

@@ -8,7 +8,6 @@
  #include "WProgram.h"
 #endif
 
-
 #define SETTING_NOW_NONE  0
 #define SETTING_NOW_10HOUR  1
 #define SETTING_NOW_1HOUR 2
@@ -21,31 +20,25 @@
 #define SETTING_NOW_YEAR10 8
 #define SETTING_NOW_YEAR1 9
 
+#define SETTING_NOW_12HR  10
+#define SETTING_NOW_24HR  11
+
 #define OPTION_DATE_INDEX 0
 #define OPTION_TIME_INDEX 1
-#define OPTION_SAVE_INDEX 2
-#define OPTION_EXIT_INDEX 3
+#define OPTION_12HR_INDEX 2
+#define OPTION_SAVE_INDEX 3
+#define OPTION_EXIT_INDEX 4
+
+#define AMPM  5 // Bit 5 of Hour byte
+
+enum eHR1224 { HR12, HR24 };
+enum eAMPM { HRAM, HRPM };
 
 
 typedef struct{
   byte now;
   byte val;
 }s_menuNowSetting;
-
-const char months[12][4] PROGMEM = {
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec"
-};
 
 inline byte time_dow(int y, byte m, byte d)
 {
@@ -70,6 +63,9 @@ void showDateStr();
 void showDateStr(int16_t invert_start, int16_t invert_length);
 void showTimeStr();
 void showTimeStr(int16_t invert_start, int16_t invert_length);
+void show1224HrStr();
+void show1224HrStr(int16_t invert_start, int16_t invert_length);
+void hr1224Draw();
 void saveTimeFunc();
 void timeDraw();
 void back();
