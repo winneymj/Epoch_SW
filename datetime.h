@@ -22,6 +22,8 @@
 
 #define SETTING_NOW_12HR  10
 #define SETTING_NOW_24HR  11
+#define SETTING_NOW_AMHR  12
+#define SETTING_NOW_PMHR  13
 
 #define OPTION_DATE_INDEX 0
 #define OPTION_TIME_INDEX 1
@@ -70,6 +72,8 @@ void saveTimeFunc();
 void timeDraw();
 void back();
 void dateDraw();
+void hrAmPmDraw();
+
 
 
 

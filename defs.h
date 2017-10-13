@@ -1,6 +1,13 @@
 #ifndef _DEFS_H
 #define _DEFS_H
 
+
+#define SCK 19
+#define MOSI 18
+#define SS 23
+#define EXTMODE 28
+
+
 // Button pins
 #define LED 6
 #define MBUT 4

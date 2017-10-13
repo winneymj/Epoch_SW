@@ -8,7 +8,6 @@
 #include <RTCx.h>         // https://github.com/stevemarple/RTCx
 
 #include "defs.h"
-//#include "icons.h"
 #include "datetime.h"
 #include "courbd6pt7b.h"
 
@@ -29,10 +28,6 @@ eAMPM amPm;
 //------------------------------------------------------------
 void timeFunc()
 {
-//#ifndef SLEEP_PROCESSOR
-//Serial.println("timeFunc(): Enter");
-//#endif
-
   tmElements_t currTime;
   MyDS3232.read(currTime);
 
@@ -59,17 +54,10 @@ void timeFunc()
   currentMenu = &dateTimeMenu;
 
   display.fillRect(0, 64, 128, 128, WHITE); // Clear display
-
-//#ifndef SLEEP_PROCESSOR
-//Serial.println("timeFunc(): Exit");
-//#endif
 }
 
 void back()
 {
-//#ifndef SLEEP_PROCESSOR
-//Serial.println("back()");
-//#endif
   // Point to top level menu
   currentMenu = &menu;
 }
@@ -156,6 +144,9 @@ byte getMaxValForSetting()
       break;
     case SETTING_NOW_12HR:
     case SETTING_NOW_24HR:
+      max = 1;
+    case SETTING_NOW_AMHR:
+    case SETTING_NOW_PMHR:
       max = 1;
       break;
     default:
@@ -339,10 +330,36 @@ void selectTime()
         setting.val = mod;
       }   
       break;
+    case SETTING_NOW_1MIN:
+      {
+        timeDataSet.Minute = ((timeDataSet.Minute / 10) * 10) + setting.val;
+        if(timeDataSet.Minute > 59)
+        {
+          timeDataSet.Minute = 59;
+        }
+
+        // If 12 hr clock then move on to AM/PM selection else end selection.
+        if (hr1224 == HR12)
+        {
+          setting.now = SETTING_NOW_AMHR;
+          setting.val = amPm;
+        }
+        else
+        {
+          setting.now = SETTING_NOW_NONE;
+          // Go back to menu after finishing the editing of the date.
+          // TODO - Find a nicer way to do this................
+          dateTimeMenu.setDownFunc(dateTimeDownFunc);
+          dateTimeMenu.setUpFunc(dateTimeUpFunc);
+          dateTimeMenu.setDrawFunc(NULL);
+        }
+      }   
+      break;
     default:
-      timeDataSet.Minute = ((timeDataSet.Minute / 10) * 10) + setting.val;
-      if(timeDataSet.Minute > 59)
-        timeDataSet.Minute = 59;
+      if (hr1224 == HR12)
+      {
+        amPm = (eAMPM)setting.val;
+      }
       setting.now = SETTING_NOW_NONE;
 
       // Go back to menu after finishing the editing of the date.
@@ -387,6 +404,11 @@ void timeDraw()
       invert_start = 5;
       invert_length = 1;
       timeDataSet.Minute = ((timeDataSet.Minute / 10) * 10) + setting.val;
+      break;
+    case SETTING_NOW_AMHR:
+      invert_start = 7;
+      invert_length = 2;
+      amPm = (eAMPM)setting.val;
       break;
   }
 
@@ -509,12 +531,23 @@ void saveTimeFunc()
   switch(hr1224)
   {
     case HR12:
-      MyDS3232.writeRTC(RTC_HOURS, hrRead | _BV(HR1224)); // Set bit 6
+      hrRead |= _BV(HR1224); // Set bit 6
+      switch(amPm)
+      {
+        case HRPM:
+          hrRead |= _BV(AMPM); // Set bit 5
+        break;
+        case HRAM:
+          hrRead &= ~_BV(AMPM); // Clear bit 5
+        break;
+      }
     break;
     case HR24:
-      MyDS3232.writeRTC(RTC_HOURS, hrRead & ~_BV(HR1224)); // Clear bit 6
+      hrRead &= ~_BV(HR1224); // Clear bit 6
     break;
   }
+
+  MyDS3232.writeRTC(RTC_HOURS, hrRead); // Set hrs with AM/PM/24Hr/12Hr
 
   // Change the option text to Saved
   dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 
