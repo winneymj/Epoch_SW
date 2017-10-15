@@ -10,7 +10,12 @@
 
 #define NUM_MENUS             3
 #define MENU_MAIN_INDEX       0
-#define MENU_DATE_TIME_INDEX  1
+#define OPT_DATE_TIME_INDEX   0
+#define OPT_SETTINGS_INDEX    1
+#define OPT_EXIT_INDEX        2
+#define MENU_SETTINGS_INDEX   1
+#define OPT_INVERT_INDEX        0
+#define OPT_SETTINGS_EXIT_INDEX 1
 
 #define INACTIVITY 30000
 

@@ -30,11 +30,17 @@ void initializeMenu()
   menu.initMenu(1);  // Create a menu system with ? menu rows
   menu.setTextSize(1);
   menu.setFont(&cour6pt7b);
-  
-  menu.createMenu(MENU_MAIN_INDEX, 3, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc); // 3 options
-  menu.createOption(MENU_MAIN_INDEX, 0, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
-  menu.createOption(MENU_MAIN_INDEX, 1, PSTR("Settings"), menu_settingsBitmaps, timeFunc);
-  menu.createOption(MENU_MAIN_INDEX, 2, PSTR("Exit"), menu_exitBitmaps, exitMenu);
+
+  // Top level menu
+  menu.createMenu(MENU_MAIN_INDEX, 3, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
+  menu.createOption(MENU_MAIN_INDEX, OPT_DATE_TIME_INDEX, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
+  menu.createOption(MENU_MAIN_INDEX, OPT_SETTINGS_INDEX, PSTR("Settings"), menu_settingsBitmaps, (uint8_t)MENU_SETTINGS_INDEX);
+  menu.createOption(MENU_MAIN_INDEX, OPT_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, exitMenu);
+
+  // Create sub menu for settings
+  menu.createMenu(MENU_SETTINGS_INDEX, 2, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
+  menu.createOption(MENU_SETTINGS_INDEX, OPT_INVERT_INDEX, PSTR("Invert"), menu_invertBitmaps, timeFunc);
+  menu.createOption(MENU_SETTINGS_INDEX, OPT_SETTINGS_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
 }
 
 //----------------------------------------------------------------
