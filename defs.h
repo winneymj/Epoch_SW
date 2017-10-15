@@ -20,6 +20,11 @@
 //#define SLEEP_PROCESSOR
 
 #define MENU_MAIN_INDEX     0
+#define MENU_SUB_INDEX      1
+#define MENU_SUB_SUB_INDEX  2
+#define MENU_CHANNELS_INDEX 3
+
+
 
 const char months[12][10] PROGMEM = {
   "January",
