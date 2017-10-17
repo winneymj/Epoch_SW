@@ -39,7 +39,7 @@ void initializeMenu()
 
   // Create sub menu for settings
   menu.createMenu(MENU_SETTINGS_INDEX, 2, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
-  menu.createOption(MENU_SETTINGS_INDEX, OPT_INVERT_INDEX, PSTR("Invert"), menu_invertBitmaps, timeFunc);
+  menu.createOption(MENU_SETTINGS_INDEX, OPT_INVERT_INDEX, PSTR("Invert"), menu_invertBitmaps, invertFunc);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_SETTINGS_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
 }
 
@@ -60,14 +60,14 @@ void displayMenu()
     rtcRead = !rtcRead;
 
     // Clear bottom of screen
-    display.fillRect(0, 64, 128, 128, WHITE);
+    display.fillRect(0, 64, 128, 128, invert ? BLACK : WHITE);
     bool animating = currentMenu->updateMenu();
     display.refresh();
 
     while (animating)
     {
       // Clear bottom of screen
-      display.fillRect(0, 64, 128, 128, WHITE);
+      display.fillRect(0, 64, 128, 128, invert ? BLACK : WHITE);
       animating = currentMenu->updateMenu();
       display.refresh();
       delay(20);
@@ -124,11 +124,8 @@ void displayMenu()
 
 void exitMenu()
 {
-#ifndef SLEEP_PROCESSOR
-//Serial.println("exitMenu(): Enter");
-#endif
   // Clear down bottom of the screen
-  display.fillRect(0, 64, 128, 128, WHITE);
+  display.fillRect(0, 64, 128, 128, invert ? BLACK : WHITE);
 
   // Set flag to make sure we exit the while loop.
   menuExit = true;
@@ -136,17 +133,11 @@ void exitMenu()
 
 void menuDownFunc()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("menuDownFunc(): Enter");
-#endif
   menu.downOption();
 }
 
 void menuUpFunc()
 {
-#ifndef SLEEP_PROCESSOR
-Serial.println("menuUpFunc(): Enter");
-#endif
   menu.upOption();
 }
 

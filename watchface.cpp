@@ -24,12 +24,13 @@
 extern Adafruit_SharpMem display;
 extern DS3232RTC MyDS3232;
 extern void printCenterString(char *str);
+extern bool invert;
 
 void displayLongDate(tmElements_t currTime)
 {
   display.setTextSize(1);
   display.setFont(&courbd6pt7b);
-  display.setTextColor(BLACK, WHITE);
+  display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
 
   char timeBuff[32] = {0};
   sprintf_P(timeBuff, PSTR("%s %u, %u"), months[currTime.Month], currTime.Day, currTime.Year + 2000);
@@ -42,7 +43,7 @@ void displayTime(tmElements_t currTime)
 {
   display.setTextSize(1);
   display.setFont(&arialn28pt7b);
-  display.setTextColor(BLACK, WHITE);
+  display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
   
   char timeBuff[6] = {0};
 #ifdef EVERY_SECOND
@@ -58,11 +59,14 @@ void displayTime(tmElements_t currTime)
 
 void displayTime()
 {
-    // Get the time from the RTC
-    tmElements_t currTime;
-    MyDS3232.read(currTime);
+  // Get the time from the RTC
+  tmElements_t currTime;
+  MyDS3232.read(currTime);
 
-    displayTime(currTime);
-    displayLongDate(currTime);
+  // Clear down bottom of the screen
+  display.fillRect(0, 0, 128, 128, invert ? BLACK : WHITE);
+
+  displayTime(currTime);
+  displayLongDate(currTime);
 }
 

@@ -22,6 +22,7 @@
 
 extern Adafruit_SharpMem display;
 extern DS3232RTC MyDS3232;
+extern bool invert;
 
 #define CAL_XPOS          6
 #define CAL_YPOS          64
@@ -59,7 +60,7 @@ const uint8_t dayInMonth[12] PROGMEM = {
   31, //Dec
 };
 
-void printCenterString(char *str)
+void printCenterString(char *str, bool inverted)
 {
   int16_t tempX;
   int16_t tempY;
@@ -71,7 +72,12 @@ void printCenterString(char *str)
   int poX = display.getCursorX() - w / 2;
   int poY = display.getCursorY();
   display.setCursor(poX, poY);
+  display.setTextColor(inverted ? WHITE: BLACK, inverted ? BLACK : WHITE);
   display.print(str);
+}
+void printCenterString(char *str)
+{
+  printCenterString(str, invert);
 }
 
 void displayCalendarGrid()
@@ -79,22 +85,21 @@ void displayCalendarGrid()
   // Rows
   for(int loop = 0; loop < CAL_ROWS + 1; loop++)
   {
-    display.writeLine(CAL_XPOS, CAL_YPOS + (CAL_CELL_HEIGHT * loop), CAL_XPOS + (CAL_CELL_WIDTH * CAL_COLUMNS), CAL_YPOS + (CAL_CELL_HEIGHT * loop), BLACK);
+    display.writeLine(CAL_XPOS, CAL_YPOS + (CAL_CELL_HEIGHT * loop), CAL_XPOS + (CAL_CELL_WIDTH * CAL_COLUMNS), CAL_YPOS + (CAL_CELL_HEIGHT * loop), invert ? WHITE : BLACK);
   }
   
   // Columns
   for(int loop = 0; loop < CAL_COLUMNS + 1; loop++)
   {
-    display.writeLine(CAL_XPOS + (CAL_CELL_WIDTH * loop), CAL_YPOS, CAL_XPOS + (CAL_CELL_WIDTH * loop), CAL_YPOS + (CAL_CELL_HEIGHT * CAL_ROWS) , BLACK);
+    display.writeLine(CAL_XPOS + (CAL_CELL_WIDTH * loop), CAL_YPOS, CAL_XPOS + (CAL_CELL_WIDTH * loop), CAL_YPOS + (CAL_CELL_HEIGHT * CAL_ROWS) , invert ? WHITE : BLACK);
   }
 }
 
 void displayDOW()
 {
   display.setTextSize(1);
-//  display.setFont(NULL);  // Default 5x7 font.
   display.setFont(&courbd6pt7b);
-  display.setTextColor(BLACK, WHITE);
+  display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
 
   for(int loop = 0; loop < CAL_COLUMNS; loop++)
   {
@@ -141,7 +146,7 @@ void displayDates(tmElements_t currTime)
 {
   display.setTextSize(1);
   display.setFont(&cour6pt7b);
-  display.setTextColor(BLACK, WHITE);
+  display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
 
   // Get the date to start printing in the top left of calendar, Last Monday.
   uint8_t startDate = getCalendarStartDate();
@@ -175,15 +180,20 @@ void displayDates(tmElements_t currTime)
       {
         int16_t x1 = CAL_XPOS + (CAL_CELL_WIDTH * (column - 1));
         int16_t y1 = CAL_YPOS + (CAL_CELL_HEIGHT * row);
-        display.fillRect(x1, y1, CAL_CELL_WIDTH, CAL_CELL_HEIGHT, BLACK);
-        display.setTextColor(WHITE, BLACK);
+        display.fillRect(x1, y1, CAL_CELL_WIDTH, CAL_CELL_HEIGHT, invert ? WHITE : BLACK);
+        display.setTextColor(invert ? BLACK: WHITE, invert ? WHITE : BLACK);
+        // Output the date
+        printCenterString(weekStr, !invert);
       }
-      // Output the date
-      printCenterString(weekStr);
+      else
+      {
+        // Output the date
+        printCenterString(weekStr);
+      }
 
       if (dom == startDate)
       {
-        display.setTextColor(BLACK, WHITE);
+        display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
       }
       startDate++;
       // Check if greater then end of month date and set to 1

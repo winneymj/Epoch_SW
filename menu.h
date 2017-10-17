@@ -28,14 +28,15 @@ extern volatile uint8_t pinValD;
 extern volatile uint8_t pinValU;
 extern pFunc drawFunc;
 extern void displayTime();
+extern bool invert;
+
 
 // Forward Declarations
 void timeFunc();
+void invertFunc();
 void exitMenu();
 void menuUpFunc();
 void menuDownFunc();
-
-
 
 
 #endif
