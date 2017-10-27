@@ -211,6 +211,9 @@ void displayCalendar()
   tmElements_t currTime; // TODO...make this global?
   MyDS3232.read(currTime);
   
+  // Clear down bottom area of the screen
+  display.fillRect(0, display.height() / 2, display.width(), display.height(), invert ? BLACK : WHITE);
+
   displayDOW();
   displayDates(currTime);
   displayCalendarGrid();

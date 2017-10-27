@@ -147,3 +147,17 @@ const GFXfont courbd6pt7b PROGMEM = {
   0x20, 0x7E, 14 };
 
 // Approx. 1198 bytes
+
+const uint8_t cour6pt8bDegreeBitmaps[] PROGMEM = {
+  0xF7, 0x80 };
+
+const GFXglyph cour6pt8bDegreeGlyphs[] PROGMEM = {
+  {     0,   3,   3,   5,    2,   -8 } }; // 0xB0
+
+const GFXfont cour6pt8bDegree PROGMEM = {
+  (uint8_t  *)cour6pt8bDegreeBitmaps,
+  (GFXglyph *)cour6pt8bDegreeGlyphs,
+  0xB0, 0xB0, 14 };
+
+// Approx. 16 bytes
+

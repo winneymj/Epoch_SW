@@ -56,6 +56,7 @@ const char shortMonths[12][4] PROGMEM = {
   "Dec",
 };
 
+enum eTempConversion { fahrenheit, centigrade };
 
 
 #endif
