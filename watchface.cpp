@@ -87,7 +87,8 @@ void displayTime()
   tmElements_t currTime;
   MyDS3232.read(currTime);
 
-  float temp = MyDS3232.temperature() / 4.0;
+  int initTemp = MyDS3232.temperature();
+  float temp = initTemp / 4.0;
 
   // Clear down entire screen
   display.fillRect(0, 0, display.width(), display.height() / 2, invert ? BLACK : WHITE);

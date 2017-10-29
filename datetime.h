@@ -25,11 +25,19 @@
 #define SETTING_NOW_AMHR  12
 #define SETTING_NOW_PMHR  13
 
-#define OPTION_DATE_INDEX 0
-#define OPTION_TIME_INDEX 1
-#define OPTION_12HR_INDEX 2
-#define OPTION_SAVE_INDEX 3
-#define OPTION_EXIT_INDEX 4
+//#define OPTION_TIME_INDEX 1
+//#define OPTION_12HR_INDEX 2
+//#define OPTION_SAVE_INDEX 3
+//#define OPTION_EXIT_INDEX 4
+
+#define OPTION_DATE_DATE_INDEX 0
+#define OPTION_DATE_SAVE_INDEX 1
+#define OPTION_DATE_EXIT_INDEX 2
+
+#define OPTION_TIME_TIME_INDEX 0
+#define OPTION_TIME_12HR_INDEX 1
+#define OPTION_TIME_SAVE_INDEX 2
+#define OPTION_TIME_EXIT_INDEX 3
 
 #define AMPM  5 // Bit 5 of Hour byte
 
@@ -59,8 +67,10 @@ inline byte time_dow(int y, byte m, byte d)
 #define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
 
 // Forward declarations
-void dateTimeDownFunc();
-void dateTimeUpFunc();
+void dateDownFunc();
+void dateUpFunc();
+void timeDownFunc();
+void timeUpFunc();
 void showDateStr();
 void showDateStr(int16_t invert_start, int16_t invert_length);
 void showTimeStr();
@@ -70,9 +80,12 @@ void show1224HrStr(int16_t invert_start, int16_t invert_length);
 void hr1224Draw();
 void saveTimeFunc();
 void timeDraw();
-void back();
+void timeBack();
+void dateBack();
 void dateDraw();
 void hrAmPmDraw();
+void saveDateFunc();
+
 
 
 

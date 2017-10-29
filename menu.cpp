@@ -27,16 +27,22 @@ bool menuExit = false;
 
 void initializeMenu()
 {
-  menu.initMenu(1);  // Create a menu system with ? menu rows
+  menu.initMenu(3);  // Create a menu system with ? menu rows
   menu.setTextSize(1);
   menu.setFont(&cour6pt7b);
 
   // Top level menu
   menu.createMenu(MENU_MAIN_INDEX, 3, PSTR("<MAIN MENU>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
-  menu.createOption(MENU_MAIN_INDEX, OPT_DATE_TIME_INDEX, PSTR("Date & Time"), menu_clockBitmaps, timeFunc);
+  menu.createOption(MENU_MAIN_INDEX, OPT_DATE_TIME_INDEX, PSTR("Date & Time"), menu_datetimeBitmaps, (uint8_t)MENU_DATETIME_INDEX);
   menu.createOption(MENU_MAIN_INDEX, OPT_SETTINGS_INDEX, PSTR("Settings"), menu_settingsBitmaps, (uint8_t)MENU_SETTINGS_INDEX);
   menu.createOption(MENU_MAIN_INDEX, OPT_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, exitMenu);
 
+  // Create sub menu for date & time
+  menu.createMenu(MENU_DATETIME_INDEX, 3, PSTR("<DATE & TIME>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
+  menu.createOption(MENU_DATETIME_INDEX, OPT_DATE_INDEX, PSTR("Date"), menu_calendarBitmaps, dateFunc);
+  menu.createOption(MENU_DATETIME_INDEX, OPT_TIME_INDEX, PSTR("Time"), menu_clockBitmaps, timeFunc);
+  menu.createOption(MENU_DATETIME_INDEX, OPT_DATE_TIME_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
+  
   // Create sub menu for settings
   menu.createMenu(MENU_SETTINGS_INDEX, 2, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_INVERT_INDEX, PSTR("Invert"), menu_invertBitmaps, invertFunc);

@@ -15,9 +15,10 @@ extern Adafruit_SharpMem display;
 extern WatchMenu *currentMenu;
 extern DS3232RTC MyDS3232;
 extern WatchMenu menu;
+extern bool invert;
 
-s_menuNowSetting setting;
-WatchMenu dateTimeMenu(display);
+extern s_menuNowSetting setting;
+WatchMenu timeMenu(display);
 tmElements_t timeDataSet = {0};
 eHR1224 hr1224;
 eAMPM amPm;
@@ -36,81 +37,32 @@ void timeFunc()
   hr1224 = (MyDS3232.readRTC(RTC_HOURS) & _BV(HR1224)) ? HR12 : HR24; // Hr
   amPm = (MyDS3232.readRTC(RTC_HOURS) & _BV(AMPM)) ? HRPM : HRAM; // Morning/Afternoon
 
-  dateTimeMenu.initMenu(1);  // Create a menu system with ? menu rows
-  dateTimeMenu.setTextSize(1);
-  dateTimeMenu.setFont(&courbd6pt7b);
-  dateTimeMenu.createMenu(MENU_MAIN_INDEX, 5, PSTR("<DATE/TIME>"), MENU_TYPE_STR, dateTimeDownFunc, dateTimeUpFunc);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_EXIT_INDEX, PSTR("Exit"), NULL, back); // Position 4
+  timeMenu.initMenu(1);  // Create a menu system with ? menu rows
+  timeMenu.setTextSize(1);
+  timeMenu.setFont(&courbd6pt7b);
+  timeMenu.createMenu(MENU_MAIN_INDEX, 5, PSTR("<DATE/TIME>"), MENU_TYPE_STR, timeDownFunc, timeUpFunc);
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_SAVE_INDEX, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_EXIT_INDEX, PSTR("Exit"), NULL, timeBack); // Position 4
 
-  showDateStr();
   showTimeStr();
   show1224HrStr();
 
   // Default to date selected
-  dateTimeMenu.selectedOption(MENU_MAIN_INDEX, OPTION_DATE_INDEX); // Set the default selection to the date
+  timeMenu.selectedOption(MENU_MAIN_INDEX, OPTION_TIME_TIME_INDEX); // Set the default selection to the date
   
   // Point to date/time menu
-  currentMenu = &dateTimeMenu;
+  currentMenu = &timeMenu;
 
-  display.fillRect(0, 64, 128, 128, WHITE); // Clear display
+  display.fillRect(0, 64, 128, 128, invert ? BLACK : WHITE); // Clear display
 }
 
-void back()
+void timeBack()
 {
   // Point to top level menu
   currentMenu = &menu;
 }
 
-//-------------------------------------------------------------- 
-// Method draws the selection highlight when changing the date.
-// The character highlight is reversed so it can be seen
-//-------------------------------------------------------------- 
-void dateDraw()
-{
-#ifndef SLEEP_PROCESSOR
-//Serial.println("dateDraw(): Enter");
-#endif
-  int16_t invert_start = -1;
-  int16_t invert_length = 0;
-
-  switch(setting.now)
-  {
-    case SETTING_NOW_DAY10:
-      invert_start = 1;
-      invert_length = 1;
-      timeDataSet.Day = (setting.val * 10) + (timeDataSet.Day % 10);
-      break;
-    case SETTING_NOW_DAY1:
-      invert_start = 2;
-      invert_length = 1;
-      timeDataSet.Day = ((timeDataSet.Day / 10) * 10) + setting.val;
-      break;
-    case SETTING_NOW_MONTH:
-      invert_start = 4;
-      invert_length = 3;
-      timeDataSet.Month = setting.val;
-      break;
-    case SETTING_NOW_YEAR10:
-      invert_start = 8;
-      invert_length = 1;
-      timeDataSet.Year = (setting.val * 10) + timeDataSet.Year % 10;
-      break;
-    case SETTING_NOW_YEAR1:
-      invert_start = 9;
-      invert_length = 1;
-      timeDataSet.Year = ((timeDataSet.Year / 10) * 10) + setting.val;
-      break;
-    default:
-      // Remove inversion
-      invert_start = -1;
-      invert_length = 0;
-  }
-  
-  showDateStr(invert_start, invert_length);
-}
-
-byte getMaxValForSetting()
+byte getMaxValForTimeSetting()
 {
   byte max;
   switch(setting.now)
@@ -125,21 +77,6 @@ byte getMaxValForSetting()
       max = 5;
       break;
     case SETTING_NOW_1MIN:
-      max = 9;
-      break;
-    case SETTING_NOW_DAY10:
-      max = 3;
-      break;
-    case SETTING_NOW_DAY1:
-      max = 9;
-      break;
-    case SETTING_NOW_MONTH:
-      max = 11;
-      break;
-    case SETTING_NOW_YEAR10:
-      max = 9;
-      break;
-    case SETTING_NOW_YEAR1:
       max = 9;
       break;
     case SETTING_NOW_12HR:
@@ -162,7 +99,7 @@ byte getMaxValForSetting()
 void timeDataUp()
 {
   setting.val++;
-  if(setting.val > getMaxValForSetting())
+  if(setting.val > getMaxValForTimeSetting())
     setting.val = 0;
 }
 
@@ -172,92 +109,17 @@ void timeDataUp()
 void timeDataDown()
 {
   setting.val--;
-  byte max = getMaxValForSetting();
+  byte max = getMaxValForTimeSetting();
   if(setting.val > max)
     setting.val = max;
-}
-
-//----------------------------------------------------
-// Method is called when the Middle button (select) is
-// pressed on the date menu.
-//----------------------------------------------------
-void selectDate()
-{
-  // Set the up and down buttons, and drawing routine to new functions
-  dateTimeMenu.setDownFunc(timeDataUp);
-  dateTimeMenu.setUpFunc(timeDataDown);
-  dateTimeMenu.setDrawFunc(dateDraw);
-
-  switch(setting.now)
-  {
-    case SETTING_NOW_NONE:
-      setting.now = SETTING_NOW_DAY10;
-      setting.val = timeDataSet.Day / 10;
-      break;
-    case SETTING_NOW_DAY10:
-      {
-        byte mod = timeDataSet.Day % 10;
-        timeDataSet.Day = (setting.val * 10) + mod;
-        setting.now = SETTING_NOW_DAY1;
-        setting.val = mod;
-      }
-      break;
-    case SETTING_NOW_DAY1:
-      timeDataSet.Day = ((timeDataSet.Day / 10) * 10) + setting.val;
-      if(timeDataSet.Day < 1)
-        timeDataSet.Day = 1;
-      else if(timeDataSet.Day > 31)
-        timeDataSet.Day = 31;
-      setting.now = SETTING_NOW_MONTH;
-      setting.val = timeDataSet.Month;
-      break;
-    case SETTING_NOW_MONTH:
-    {
-      timeDataSet.Month = setting.val;
-      byte maxDays = 31;
-      byte mnth = timeDataSet.Month;
-      if(mnth == 3 || mnth == 5 || mnth == 8 || mnth == 10)
-        maxDays = 30;
-      else if(mnth == 1)
-        maxDays = LEAP_YEAR(timeDataSet.Year) ? 29 : 28;
-      if(timeDataSet.Day > maxDays)
-        timeDataSet.Day = maxDays;
-      setting.now = SETTING_NOW_YEAR10;
-      setting.val = timeDataSet.Year / 10;
-    }
-      break;
-    case SETTING_NOW_YEAR10:
-      {
-        byte mod = timeDataSet.Year % 10;
-        timeDataSet.Year = (setting.val * 10) + mod;
-        setting.now = SETTING_NOW_YEAR1;
-        setting.val = mod;
-      }
-      break;
-    default:
-      timeDataSet.Year = ((timeDataSet.Year / 10) * 10) + setting.val;
-      timeDataSet.Wday = time_dow(timeDataSet.Year + 2000, timeDataSet.Month + 1, timeDataSet.Day);
-      setting.now = SETTING_NOW_NONE;
-
-      // Go back to menu after finishing the editing of the date.
-      // TODO - Find a nicer way to do this................
-      dateTimeMenu.setDownFunc(dateTimeDownFunc);
-      dateTimeMenu.setUpFunc(dateTimeUpFunc);
-      dateTimeMenu.setDrawFunc(NULL);
-      
-      break;
-  }
-
-  // Display the new date
-  showDateStr();
 }
 
 void select1224hr()
 {
   // Set the up and down buttons, and drawing routine to new functions
-  dateTimeMenu.setDownFunc(timeDataUp);
-  dateTimeMenu.setUpFunc(timeDataDown);
-  dateTimeMenu.setDrawFunc(hr1224Draw);
+  timeMenu.setDownFunc(timeDataUp);
+  timeMenu.setUpFunc(timeDataDown);
+  timeMenu.setDrawFunc(hr1224Draw);
 
   switch(setting.now)
   {
@@ -273,9 +135,9 @@ void select1224hr()
 
       // Go back to menu after finishing the editing of the date.
       // TODO - Find a nicer way to do this................
-      dateTimeMenu.setDownFunc(dateTimeDownFunc);
-      dateTimeMenu.setUpFunc(dateTimeUpFunc);
-      dateTimeMenu.setDrawFunc(NULL);
+      timeMenu.setDownFunc(timeDownFunc);
+      timeMenu.setUpFunc(timeUpFunc);
+      timeMenu.setDrawFunc(NULL);
       break;
   }
 
@@ -297,9 +159,9 @@ void hr1224Draw()
 void selectTime()
 {
   // Set the up and down buttons, and drawing routine to new functions
-  dateTimeMenu.setDownFunc(timeDataUp);
-  dateTimeMenu.setUpFunc(timeDataDown);
-  dateTimeMenu.setDrawFunc(timeDraw);
+  timeMenu.setDownFunc(timeDataUp);
+  timeMenu.setUpFunc(timeDataDown);
+  timeMenu.setDrawFunc(timeDraw);
 
   switch(setting.now)
   {
@@ -349,9 +211,9 @@ void selectTime()
           setting.now = SETTING_NOW_NONE;
           // Go back to menu after finishing the editing of the date.
           // TODO - Find a nicer way to do this................
-          dateTimeMenu.setDownFunc(dateTimeDownFunc);
-          dateTimeMenu.setUpFunc(dateTimeUpFunc);
-          dateTimeMenu.setDrawFunc(NULL);
+          timeMenu.setDownFunc(timeDownFunc);
+          timeMenu.setUpFunc(timeUpFunc);
+          timeMenu.setDrawFunc(NULL);
         }
       }   
       break;
@@ -364,9 +226,9 @@ void selectTime()
 
       // Go back to menu after finishing the editing of the date.
       // TODO - Find a nicer way to do this................
-      dateTimeMenu.setDownFunc(dateTimeDownFunc);
-      dateTimeMenu.setUpFunc(dateTimeUpFunc);
-      dateTimeMenu.setDrawFunc(NULL);
+      timeMenu.setDownFunc(timeDownFunc);
+      timeMenu.setUpFunc(timeUpFunc);
+      timeMenu.setDrawFunc(NULL);
       break;
   }
 
@@ -416,31 +278,6 @@ void timeDraw()
 }
 
 //--------------------------------------------------------------
-// Method creates the date string to me used for the menu string
-//--------------------------------------------------------------
-void makeDateStr(char* buff)
-{
-  char month[4] = {0};
-  strcpy_P(month, shortMonths[timeDataSet.Month]);
-  sprintf_P(buff, PSTR("%1s%02u %s %02u"), "", timeDataSet.Day, month, timeDataSet.Year);
-}
-
-void showDateStr()
-{
-  showDateStr(-1, 0); // No invert
-}
-
-//--------------------------------------------------------------
-// Method creates the date menu option using the date passed in.
-//--------------------------------------------------------------
-void showDateStr(int16_t invert_start, int16_t invert_length)
-{
-  char buff[21];
-  makeDateStr(buff);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_INDEX, invert_start, invert_length, buff, NULL, selectDate); // Position 1
-}
-
-//--------------------------------------------------------------
 // Method creates the time string to me used for the menu string
 //--------------------------------------------------------------
 void makeTimeStr(char* buff)
@@ -468,7 +305,7 @@ void showTimeStr(int16_t invert_start, int16_t invert_length)
 {
   char buff[12];
   makeTimeStr(buff);
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_INDEX, invert_start, invert_length, buff, NULL, selectTime); // Position 2
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_TIME_INDEX, invert_start, invert_length, buff, NULL, selectTime); // Position 2
 }
 
 //--------------------------------------------------------------
@@ -492,7 +329,7 @@ void show1224HrStr(int16_t invert_start, int16_t invert_length)
       strcpy_P(buff, PSTR(" 24 hr"));
       break;
   }
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_12HR_INDEX, invert_start, invert_length, buff, NULL, select1224hr);
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_12HR_INDEX, invert_start, invert_length, buff, NULL, select1224hr);
 
   // Redraw the time string also, as we may have changed the 12/24 hr option.
   showTimeStr();
@@ -502,18 +339,18 @@ void show1224HrStr(int16_t invert_start, int16_t invert_length)
 // Method handles down button pressed when 
 // editing the date and time strings
 //----------------------------------------
-void dateTimeDownFunc()
+void timeDownFunc()
 {
-  dateTimeMenu.upOption();
+  timeMenu.upOption();
 }
 
 //----------------------------------------
 // Method handles up button pressed when 
 // editing the date and time strings
 //----------------------------------------
-void dateTimeUpFunc()
+void timeUpFunc()
 {
-  dateTimeMenu.downOption();
+  timeMenu.downOption();
 }
 
 //----------------------------------------------------------------
@@ -550,7 +387,7 @@ void saveTimeFunc()
   MyDS3232.writeRTC(RTC_HOURS, hrRead); // Set hrs with AM/PM/24Hr/12Hr
 
   // Change the option text to Saved
-  dateTimeMenu.createOption(MENU_MAIN_INDEX, OPTION_SAVE_INDEX, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_SAVE_INDEX, PSTR("Saved"), NULL, saveTimeFunc); // Position 3 
 }
 
 
