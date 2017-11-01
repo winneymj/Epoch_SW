@@ -9,7 +9,7 @@
 
 #include "defs.h"
 #include "datetime.h"
-#include "courbd6pt7b.h"
+#include "cour8pt7b.h"
 
 extern Adafruit_SharpMem display;
 extern WatchMenu *currentMenu;
@@ -35,10 +35,11 @@ void dateFunc()
 
   dateMenu.initMenu(1);  // Create a menu system with ? menu rows
   dateMenu.setTextSize(1);
-  dateMenu.setFont(&courbd6pt7b);
+  dateMenu.setFont(&cour8pt7b);
   dateMenu.createMenu(MENU_MAIN_INDEX, 3, PSTR("<DATE>"), MENU_TYPE_STR, dateDownFunc, dateUpFunc);
-  dateMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_SAVE_INDEX, PSTR("Save"), NULL, saveDateFunc); // Position 3 
-  dateMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_EXIT_INDEX, PSTR("Exit"), NULL, dateBack); // Position 4
+  dateMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_SAVE_INDEX, PSTR("Save"), NULL, saveDateFunc);
+  dateMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_EXIT_INDEX, PSTR("Exit"), NULL, dateBack);
+  dateMenu.invertDisplay(invert);
 
   showDateStr();
 
@@ -258,7 +259,7 @@ void showDateStr(int16_t invert_start, int16_t invert_length)
 {
   char buff[21];
   makeDateStr(buff);
-  dateMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_DATE_INDEX, invert_start, invert_length, buff, NULL, selectDate); // Position 1
+  dateMenu.createOption(MENU_MAIN_INDEX, OPTION_DATE_DATE_INDEX, invert_start, invert_length, buff, NULL, selectDate);
 }
 
 //----------------------------------------

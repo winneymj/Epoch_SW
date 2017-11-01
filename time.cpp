@@ -9,7 +9,7 @@
 
 #include "defs.h"
 #include "datetime.h"
-#include "courbd6pt7b.h"
+#include "cour8pt7b.h"
 
 extern Adafruit_SharpMem display;
 extern WatchMenu *currentMenu;
@@ -39,10 +39,11 @@ void timeFunc()
 
   timeMenu.initMenu(1);  // Create a menu system with ? menu rows
   timeMenu.setTextSize(1);
-  timeMenu.setFont(&courbd6pt7b);
-  timeMenu.createMenu(MENU_MAIN_INDEX, 5, PSTR("<DATE/TIME>"), MENU_TYPE_STR, timeDownFunc, timeUpFunc);
-  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_SAVE_INDEX, PSTR("Save"), NULL, saveTimeFunc); // Position 3 
-  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_EXIT_INDEX, PSTR("Exit"), NULL, timeBack); // Position 4
+  timeMenu.setFont(&cour8pt7b);
+  timeMenu.createMenu(MENU_MAIN_INDEX, 4, PSTR("<DATE/TIME>"), MENU_TYPE_STR, timeDownFunc, timeUpFunc);
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_SAVE_INDEX, PSTR("Save"), NULL, saveTimeFunc);
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_EXIT_INDEX, PSTR("Exit"), NULL, timeBack);
+  timeMenu.invertDisplay(invert);
 
   showTimeStr();
   show1224HrStr();
@@ -305,7 +306,7 @@ void showTimeStr(int16_t invert_start, int16_t invert_length)
 {
   char buff[12];
   makeTimeStr(buff);
-  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_TIME_INDEX, invert_start, invert_length, buff, NULL, selectTime); // Position 2
+  timeMenu.createOption(MENU_MAIN_INDEX, OPTION_TIME_TIME_INDEX, invert_start, invert_length, buff, NULL, selectTime);
 }
 
 //--------------------------------------------------------------
