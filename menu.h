@@ -15,14 +15,17 @@
 
 #define OPT_DATE_TIME_INDEX   0
 #define OPT_SETTINGS_INDEX    1
-#define OPT_SETTINGS_EXIT_INDEX 1
 
 #define OPT_DATE_INDEX        0
 #define OPT_TIME_INDEX        1
 #define OPT_DATE_TIME_EXIT_INDEX 2
 
 #define OPT_EXIT_INDEX        2
+
+// Settings menu options
 #define OPT_INVERT_INDEX        0
+#define OPT_TEMPERATURE_INDEX   1
+#define OPT_SETTINGS_EXIT_INDEX 2
 
 #define INACTIVITY 30000
 
@@ -42,6 +45,7 @@ extern bool invert;
 void timeFunc();
 void dateFunc();
 void invertFunc();
+void switchTemp();
 void exitMenu();
 void menuUpFunc();
 void menuDownFunc();

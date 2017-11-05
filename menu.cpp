@@ -20,6 +20,7 @@
 
 // Externals
 extern long keyPressTimeStamp;
+extern eTempConversion tempType;
 
 // Locals
 WatchMenu menu(display);
@@ -44,8 +45,9 @@ void initializeMenu()
   menu.createOption(MENU_DATETIME_INDEX, OPT_DATE_TIME_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
   
   // Create sub menu for settings
-  menu.createMenu(MENU_SETTINGS_INDEX, 2, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
+  menu.createMenu(MENU_SETTINGS_INDEX, 3, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_INVERT_INDEX, PSTR("Invert"), menu_invertBitmaps, invertFunc);
+  menu.createOption(MENU_SETTINGS_INDEX, OPT_TEMPERATURE_INDEX, PSTR("Temperature"), (tempType == centigrade) ? menu_celciusBitmaps : menu_fahrenheitBitmaps, switchTemp);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_SETTINGS_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
 }
 
@@ -147,4 +149,13 @@ void menuUpFunc()
   menu.upOption();
 }
 
+//------------------------------------------------------------
+//------------------------------------------------------------
+void switchTemp()
+{
+  tempType = (tempType == centigrade) ? fahrenheit : centigrade;
+Serial.print("invertTemp():");
+Serial.println(tempType);
+  currentMenu->createOption(MENU_SETTINGS_INDEX, OPT_TEMPERATURE_INDEX, PSTR("Temperature"), (tempType == centigrade) ? menu_celciusBitmaps: menu_fahrenheitBitmaps, switchTemp);
+}
 
