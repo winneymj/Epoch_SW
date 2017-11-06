@@ -45,9 +45,10 @@ void initializeMenu()
   menu.createOption(MENU_DATETIME_INDEX, OPT_DATE_TIME_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
   
   // Create sub menu for settings
-  menu.createMenu(MENU_SETTINGS_INDEX, 3, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
+  menu.createMenu(MENU_SETTINGS_INDEX, 4, PSTR("<SETTINGS>"), MENU_TYPE_ICON, menuDownFunc, menuUpFunc);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_INVERT_INDEX, PSTR("Invert"), menu_invertBitmaps, invertFunc);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_TEMPERATURE_INDEX, PSTR("Temperature"), (tempType == centigrade) ? menu_celciusBitmaps : menu_fahrenheitBitmaps, switchTemp);
+  menu.createOption(MENU_SETTINGS_INDEX, OPT_CALENDAR_INDEX, PSTR("Calendar"), menu_calendarBitmaps, calendarFunc);
   menu.createOption(MENU_SETTINGS_INDEX, OPT_SETTINGS_EXIT_INDEX, PSTR("Exit"), menu_exitBitmaps, (uint8_t)MENU_MAIN_INDEX);
 }
 
