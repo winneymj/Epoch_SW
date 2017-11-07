@@ -28,6 +28,7 @@ extern Adafruit_SharpMem display;
 extern DS3232RTC MyDS3232;
 extern bool invert;
 extern bool calendarGrid = true; // Display grid by default.
+extern byte calendarDayOffWeek = 0; // Default to Monday
 
 #define CAL_XPOS          6
 #define CAL_YPOS          64
@@ -48,6 +49,16 @@ const char dayOfWeek[7][2] PROGMEM = {
   "F",
   "S",
   "S"
+};
+
+const char dayOfWeekLong[7][4] PROGMEM = {
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun"
 };
 
 const uint8_t dayInMonth[12] PROGMEM = {
@@ -106,11 +117,14 @@ void displayDOW()
   display.setFont(&courbd6pt7b);
   display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
 
+  int arrIndex = calendarDayOffWeek;
   for(int loop = 0; loop < CAL_COLUMNS; loop++)
   {
     uint8_t cellCenter = (CAL_XPOS + 1) + ((CAL_CELL_WIDTH + 1 )/ 2.0) + (CAL_CELL_WIDTH * loop);
     display.setCursor(cellCenter, CAL_YPOS + CAL_CELL_HEIGHT - 2);
-    printCenterString((char *)dayOfWeek[loop]);
+    printCenterString((char *)dayOfWeek[arrIndex]);
+    arrIndex++;
+    arrIndex %= 7;  // Days in week
   }
 }
 
@@ -128,23 +142,25 @@ uint8_t getCalendarStartDate()
   // Get the time from the RTC
   tmElements_t currTime; // TODO...make this global?
   MyDS3232.read(currTime);
-  // Monday is 0
-  uint8_t dow = time_dow(currTime.Year + 2000, currTime.Month + 1, currTime.Day);
-  uint8_t dom = currTime.Day;
-  // Calculate date on previous Monday, ie 0 (zero)
-  int8_t lastMonDom = dom - dow; 
+  // Monday is 0, Tuesday is 1...
+  uint8_t currDow = time_dow(currTime.Year + 2000, currTime.Month + 1, currTime.Day);
+  uint8_t dom = currTime.Day; // Day in Month (1..28/29/30/31)
+
+  // Calculate date on previous calendarDayOffWeek
+  int8_t dayOffset = (currDow - calendarDayOffWeek + 7) % 7;
+  int8_t lastDom = dom - dayOffset; 
   uint8_t daysLastMonth = 0;
   
-  if (lastMonDom <= 0)
+  if (lastDom <= 0)
   {
     daysLastMonth = daysMonth(currTime, -1);
   }
 
   if (daysLastMonth > 0)
   {
-    lastMonDom = daysLastMonth + lastMonDom;
+    lastDom = daysLastMonth + lastDom;
   }
-  return lastMonDom;
+  return lastDom;
 }
 
 void displayDates(tmElements_t currTime)
@@ -153,7 +169,7 @@ void displayDates(tmElements_t currTime)
   display.setFont(&cour6pt7b);
   display.setTextColor(invert ? WHITE: BLACK, invert ? BLACK : WHITE);
 
-  // Get the date to start printing in the top left of calendar, Last Monday.
+  // Get the date to start printing in the top left of calendar, Last StartDay.
   uint8_t startDate = getCalendarStartDate();
 
   uint8_t col_index = 0;
@@ -274,24 +290,12 @@ void calendarGridDraw()
 //-------------------------------------------------------------- 
 void calendarStartDayDraw()
 {
-  int16_t invert_start = -1;
-  int16_t invert_length = 0;
-
-  switch(setting.now)
-  {
-    case SETTING_CALENDAR_STARTDAY:
-      invert_start = 1;
-      invert_length = 1;
-      break;
-    default:
-      // Remove inversion
-      invert_start = -1;
-      invert_length = 0;
-  }
-  
-  showCalendarStartDayOptions(invert_start, invert_length);
+  calendarDayOffWeek = setting.val;
+  showCalendarStartDayOptions(6, 3);
 }
 
+//-------------------------------------------------------------- 
+//-------------------------------------------------------------- 
 byte getMaxCalendarValForSetting()
 {
   byte max;
@@ -301,7 +305,7 @@ byte getMaxCalendarValForSetting()
       max = 1;
       break;
     case SETTING_CALENDAR_STARTDAY:
-      max = 7;
+      max = 6;
       break;
     default:
       max = 1;
@@ -375,13 +379,14 @@ void selectCalendarStartDay()
 
   switch(setting.now)
   {
-    case SETTING_CALENDAR_STARTDAY:
-      setting.now = SETTING_NOW_DAY1;
-      setting.val = 1;
+    case SETTING_CALENDAR_NOW_NONE:
+      setting.val = calendarDayOffWeek;
+      setting.now = SETTING_CALENDAR_STARTDAY;
       break;
     default:
+      calendarDayOffWeek = setting.val;
       setting.now = SETTING_CALENDAR_NOW_NONE;
-
+      
       // Go back to menu after finishing the editing of the date.
       // TODO - Find a nicer way to do this................
       calendarMenu.setDownFunc(calendarDownFunc);
@@ -419,7 +424,7 @@ void showCalendarStartDayOptions()
 void showCalendarStartDayOptions(int16_t invert_start, int16_t invert_length)
 {
   char buff[21];
-  sprintf_P(buff, PSTR("Day : %s"), PSTR("M"));
+  sprintf_P(buff, PSTR("Day : %s"), dayOfWeekLong[calendarDayOffWeek]);
   calendarMenu.createOption(MENU_MAIN_INDEX, OPTION_CALENDAR_STARTDAY_INDEX, invert_start, invert_length, buff, NULL, selectCalendarStartDay);
 }
 //----------------------------------------
